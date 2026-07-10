@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Tracker - Premium Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script>
+        window.addEventListener('error', function(e) {
+            const div = document.createElement('div');
+            div.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:#ef4444;color:white;padding:15px;z-index:999999;font-weight:bold;text-align:center;font-family:monospace;box-shadow:0 4px 6px rgba(0,0,0,0.1);';
+            div.textContent = 'JavaScript Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno;
+            document.body.appendChild(div);
+        });
+    </script>
+</head>
+
+<body>
+
+    <div id="auth-container" class="auth-wrapper">
+
+        <div id="login-card" class="auth-card">
+            <div class="auth-header">
+                <i class="fa-solid fa-circle-user app-logo-icon"></i>
+                <h2>Welcome Back</h2>
+                <p>Sign in to manage your finances</p>
+            </div>
+            <form onsubmit="handleLoginSubmit(event)">
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="login-email" required placeholder="admin@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required placeholder="••••••••">
+                </div>
+                <div class="auth-action-buttons">
+                    <button type="submit" class="btn-primary">Log In</button>
+                    <button type="button" class="btn-secondary" onclick="toggleAuthMode('signup')">Go to Sign
+                        Up</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="signup-card" class="auth-card hidden">
+            <div class="auth-header">
+                <i class="fa-solid fa-user-plus app-logo-icon"></i>
+                <h2>Create Account</h2>
+                <p>Register your credentials locally</p>
+            </div>
+            <form onsubmit="handleSignupSubmit(event)">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="signup-name" required placeholder="e.g., John Doe">
+                </div>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="signup-email" required placeholder="name@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="signup-password" required placeholder="••••••••">
+                </div>
+                <div class="auth-action-buttons">
+                    <button type="submit" class="btn-success">Register Account</button>
+                    <button type="button" class="btn-secondary" onclick="toggleAuthMode('login')">Back to Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-container" class="app-wrapper hidden">
+
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-chart-line"></i>
+                <h2>Finance Tracker</h2>
+            </div>
+
+            <nav class="sidebar-menu">
+                <button class="menu-item active" onclick="switchTab('dashboard')"><i class="fa-solid fa-house"></i>
+                    Dashboard</button>
+                <button class="menu-item" onclick="switchTab('transactions')"><i class="fa-solid fa-exchange-alt"></i>
+                    Transactions</button>
+                <button class="menu-item" onclick="switchTab('income')"><i class="fa-solid fa-arrow-trend-up"></i>
+                    Income</button>
+                <button class="menu-item" onclick="switchTab('expenses')"><i class="fa-solid fa-arrow-trend-down"></i>
+                    Expenses</button>
+                <button class="menu-item" onclick="switchTab('accounts')"><i class="fa-solid fa-university"></i>
+                    Accounts</button>
+                <button class="menu-item" onclick="switchTab('reports')"><i class="fa-solid fa-chart-bar"></i>
+                    Reports</button>
+                <button class="menu-item" onclick="switchTab('goals')"><i class="fa-solid fa-bullseye"></i>
+                    Goals</button>
+                <button class="menu-item" onclick="switchTab('settings')"><i class="fa-solid fa-cog"></i>
+                    Settings</button>
+                <button class="menu-item text-ai-highlight" onclick="switchTab('ai-advisor')"><i
+                        class="fa-solid fa-brain animate-pulse-slow"></i> AI Advisor</button>
+                <button class="menu-item text-scan-highlight" onclick="switchTab('scan-pay')"><i
+                        class="fa-solid fa-qrcode"></i> Scan to Pay</button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="dark-mode-widget">
+                    <span><i class="fa-solid fa-moon"></i> Dark Mode</span>
+                    <label class="switch-toggle">
+                        <input type="checkbox" id="dark-theme-checkbox" onchange="toggleDarkTheme()">
+                        <span class="slider-toggle-btn"></span>
+                    </label>
+                </div>
+
+                <div class="user-profile-summary">
+                    <div class="avatar" id="profile-avatar">U</div>
+                    <div class="user-info">
+                        <h4 id="profile-display-name">Guest User</h4>
+                        <p id="profile-display-email">guest@example.com</p>
+                    </div>
+                </div>
+                <button class="btn-logout-small" onclick="handleLogout()"><i class="fa-solid fa-power-off"></i>
+                    Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div>
+                    <h1 id="page-title">Dashboard</h1>
+                    <p id="page-subtitle">Overview of your finances</p>
+                </div>
+                <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
+                    <button class="btn-secondary" id="header-btn-guide" onclick="showWelcomeOnboardingModal()"
+                        style="border: 1px solid var(--border); background: var(--bg-card); color: var(--text); padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer;"
+                        title="Show Welcome Guide">
+                        <i class="fa-solid fa-circle-question text-primary"></i> Guide
+                    </button>
+                    <button class="btn-primary hidden" id="header-btn-add-tx" onclick="showTransactionForm()"
+                        style="padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600;">
+                        <i class="fa-solid fa-plus"></i> Add Transaction
+                    </button>
+                    <button class="btn-secondary hidden" id="header-btn-add-account" onclick="showAccountFormModal()"
+                        style="border: 1px solid var(--border); background: var(--bg-card); color: var(--text); padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer;">
+                        <i class="fa-solid fa-university"></i> Add Account
+                    </button>
+                    <button class="btn-secondary" id="header-btn-scan-pay" onclick="switchTab('scan-pay')"
+                        style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer;">
+                        <i class="fa-solid fa-qrcode"></i> Scan to Pay
+                    </button>
+                </div>
+            </header>
+
+            <div id="tx-form-modal" class="modal-backdrop hidden">
+                <div class="modal-card">
+                    <h3>Add New Record Entry</h3>
+                    <form onsubmit="addNewTransaction(event)">
+                        <div class="input-group">
+                            <label>Description</label>
+                            <input type="text" id="tx-desc" required placeholder="e.g., Shopping, Freelance Pay">
+                        </div>
+                        <div class="input-group">
+                            <label>Amount (In Default System Base)</label>
+                            <input type="number" step="0.01" id="tx-amount" required placeholder="0.00">
+                        </div>
+                        <div class="input-group">
+                            <label>Transaction Type</label>
+                            <select id="tx-type">
+                                <option value="income">Income</option>
+                                <option value="expense">Expense</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Category Group</label>
+                            <select id="tx-category" onchange="handleTxCategoryChange()">
+                                <option value="Salary">Salary</option>
+                                <option value="Freelance">Freelance</option>
+                                <option value="Food & Dining">Food & Dining</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Utilities">Utilities</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Others">Others (Custom Category)</option>
+                            </select>
+                        </div>
+                        <div class="input-group hidden" id="tx-category-custom-group">
+                            <label>Custom Category Name</label>
+                            <input type="text" id="tx-category-custom" placeholder="e.g., Medical, Taxes, Gifts">
+                        </div>
+                        <div class="input-group">
+                            <label>Payment Method</label>
+                            <select id="tx-method">
+                                <option value="Bank">Bank Transfer</option>
+                                <option value="Scan to Pay">Scan to Pay</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Credit Card">Credit Card</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label><i class="fa-solid fa-university"></i> Link to Bank Account</label>
+                            <select id="tx-account-select">
+                                <!-- Dynamically loaded accounts -->
+                            </select>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary" onclick="hideTransactionForm()">Cancel</button>
+                            <button type="submit" class="btn-primary">Insert Record</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="acc-form-modal" class="modal-backdrop hidden">
+                <div class="modal-card">
+                    <h3>Add New Bank Account</h3>
+                    <form onsubmit="addNewBankAccountModal(event)">
+                        <div class="input-group">
+                            <label>Account Name</label>
+                            <input type="text" id="modal-acc-name" placeholder="e.g., Chase Checking, Vault Savings"
+                                required>
+                        </div>
+                        <div class="input-group">
+                            <label>Account Ledger Type</label>
+                            <select id="modal-acc-type">
+                                <option value="Checking">Checking Account</option>
+                                <option value="Savings">Savings Vault</option>
+                                <option value="Credit Card">Credit Card Ledger</option>
+                                <option value="Investment">Investment Portfolio</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Initial Balance (USD Base)</label>
+                            <input type="number" id="modal-acc-balance" placeholder="0.00" step="0.01" required>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary" onclick="hideAccountFormModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">Register Account</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- QR Code Modal -->
+            <div id="qr-code-modal" class="modal-backdrop hidden">
+                <div class="modal-card text-center" style="max-width: 400px;">
+                    <h3><i class="fa-solid fa-qrcode text-primary"></i> Account QR Code</h3>
+                    <p id="qr-modal-acc-name" style="font-weight: 600; margin-top: 10px; margin-bottom: 5px;"></p>
+                    <p id="qr-modal-acc-details"
+                        style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;"></p>
+
+                    <div class="qr-code-container"
+                        style="background: white; padding: 15px; border-radius: 12px; display: inline-block; box-shadow: var(--shadow-sm); margin-bottom: 20px;">
+                        <img id="qr-modal-image" src="" alt="Account QR Code"
+                            style="width: 200px; height: 200px; display: block; border-radius: 8px;">
+                    </div>
+
+                    <div
+                        style="margin-bottom: 20px; font-size: 0.85rem; color: var(--text-muted); background: var(--bg-main); padding: 10px; border-radius: 8px; text-align: left;">
+                        <i class="fa-solid fa-circle-info text-info"></i> Scan this QR code using a different device to
+                        deposit, or use the simulator button below.
+                    </div>
+
+                    <div class="modal-actions" style="flex-direction: column; gap: 10px;">
+                        <button type="button" class="btn-primary btn-full-width" id="btn-simulate-qr-scan"
+                            style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none;">
+                            <i class="fa-solid fa-bolt"></i> Simulate Scanning This QR
+                        </button>
+                        <button type="button" class="btn-secondary btn-full-width"
+                            onclick="hideAccountQRModal()">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Welcome Onboarding Guide Modal -->
+            <div id="welcome-onboarding-modal" class="modal-backdrop hidden">
+                <div class="modal-card text-center" style="max-width: 480px; position: relative;">
+                    <button type="button" class="btn-close-onboarding" onclick="hideWelcomeOnboardingModal()"
+                        style="position: absolute; top: 15px; right: 15px; background: transparent; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted);">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                    <!-- Slide 1: Welcome -->
+                    <div class="onboarding-slide" id="onboard-slide-0">
+                        <i class="fa-solid fa-chart-line text-primary"
+                            style="font-size: 4rem; margin-top: 15px; margin-bottom: 20px;"></i>
+                        <h2
+                            style="font-weight: 800; font-size: 1.8rem; margin-bottom: 10px; background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            Welcome to MyFin!</h2>
+                        <p style="color: var(--text-muted); line-height: 1.5; font-size: 0.95rem; margin-bottom: 25px;">
+                            We're excited to help you take control of your financial journey. Let's walk through a brief
+                            1-minute setup guide to show you around the premium dashboard!
+                        </p>
+                    </div>
+
+                    <!-- Slide 2: Accounts -->
+                    <div class="onboarding-slide hidden" id="onboard-slide-1">
+                        <i class="fa-solid fa-university text-warning"
+                            style="font-size: 4rem; margin-top: 15px; margin-bottom: 20px;"></i>
+                        <h3 style="font-weight: 700; font-size: 1.4rem; margin-bottom: 10px;">Step 1: Setup Your Bank
+                            Accounts</h3>
+                        <p
+                            style="color: var(--text-muted); line-height: 1.5; font-size: 0.9rem; margin-bottom: 25px; text-align: left;">
+                            Go to the <strong>Accounts</strong> tab. Register Checking accounts, Savings vaults, or
+                            Credit cards. When you record transactions, your ledger balances synchronize automatically!
+                            You can also execute instant internal transfers.
+                        </p>
+                    </div>
+
+                    <!-- Slide 3: Transactions -->
+                    <div class="onboarding-slide hidden" id="onboard-slide-2">
+                        <i class="fa-solid fa-exchange-alt text-success"
+                            style="font-size: 4rem; margin-top: 15px; margin-bottom: 20px;"></i>
+                        <h3 style="font-weight: 700; font-size: 1.4rem; margin-bottom: 10px;">Step 2: Log Income &
+                            Expenses</h3>
+                        <p
+                            style="color: var(--text-muted); line-height: 1.5; font-size: 0.9rem; margin-bottom: 25px; text-align: left;">
+                            Add records by clicking <strong>Add Transaction</strong>. Classify under categories (Food,
+                            Transport, Rent) to monitor where your money goes. The active views let you filter and view
+                            records by category and dates.
+                        </p>
+                    </div>
+
+                    <!-- Slide 4: Scan to Pay -->
+                    <div class="onboarding-slide hidden" id="onboard-slide-3">
+                        <i class="fa-solid fa-qrcode"
+                            style="font-size: 4rem; margin-top: 15px; margin-bottom: 20px; color: #d97706;"></i>
+                        <h3 style="font-weight: 700; font-size: 1.4rem; margin-bottom: 10px;">Step 3: Scan to Pay & Show
+                            QR</h3>
+                        <p
+                            style="color: var(--text-muted); line-height: 1.5; font-size: 0.9rem; margin-bottom: 25px; text-align: left;">
+                            Visit the <strong>Scan to Pay</strong> page to execute simulated QR/UPI payments to retail
+                            partner outlets. Want to receive money? Switch to the **Show My QR** tab, choose an account,
+                            and display your dynamic deposit QR code!
+                        </p>
+                    </div>
+
+                    <!-- Slide 5: AI Advisor -->
+                    <div class="onboarding-slide hidden" id="onboard-slide-4">
+                        <i class="fa-solid fa-brain text-info animate-pulse-slow"
+                            style="font-size: 4rem; margin-top: 15px; margin-bottom: 20px;"></i>
+                        <h3 style="font-weight: 700; font-size: 1.4rem; margin-bottom: 10px;">Step 4: AI Financial
+                            Advisor</h3>
+                        <p
+                            style="color: var(--text-muted); line-height: 1.5; font-size: 0.9rem; margin-bottom: 25px; text-align: left;">
+                            Need tips? Click the <strong>AI Advisor</strong> tab. The app monitors your budget burn
+                            rate, calculates monthly savings, and provides real-time recommendation alerts to limit
+                            losses and boost cashflows.
+                        </p>
+                    </div>
+
+                    <!-- Progress Indicators (Dots) -->
+                    <div class="onboarding-indicators"
+                        style="display: flex; justify-content: center; gap: 8px; margin-bottom: 20px;">
+                        <span class="onboard-dot active" onclick="setOnboardingSlide(0)"></span>
+                        <span class="onboard-dot" onclick="setOnboardingSlide(1)"></span>
+                        <span class="onboard-dot" onclick="setOnboardingSlide(2)"></span>
+                        <span class="onboard-dot" onclick="setOnboardingSlide(3)"></span>
+                        <span class="onboard-dot" onclick="setOnboardingSlide(4)"></span>
+                    </div>
+
+                    <!-- Navigation Action Buttons -->
+                    <div class="modal-actions" style="margin-top: 0; justify-content: space-between;">
+                        <button type="button" class="btn-secondary" id="btn-onboard-prev"
+                            onclick="changeOnboardingSlide(-1)" style="visibility: hidden;">Back</button>
+                        <button type="button" class="btn-secondary" onclick="hideWelcomeOnboardingModal()"
+                            style="margin-right: auto; margin-left: 10px;">Skip Guide</button>
+                        <button type="button" class="btn-primary" id="btn-onboard-next"
+                            onclick="changeOnboardingSlide(1)">Next Step</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-body">
+                <!-- Dashboard Panel -->
+                <div id="view-dashboard" class="view-panel">
+                    <div class="metrics-grid">
+                        <div class="card card-income" onclick="switchTab('income')"
+                            title="Click to view income details">
+                            <div class="metric-icon"><i class="fa-solid fa-arrow-down"></i></div>
+                            <div>
+                                <h3>Total Income</h3>
+                                <p class="amount" id="dashboard-sum-income">0.00</p>
+                            </div>
+                        </div>
+                        <div class="card card-expense" onclick="switchTab('expenses')"
+                            title="Click to view expenses details">
+                            <div class="metric-icon"><i class="fa-solid fa-arrow-up"></i></div>
+                            <div>
+                                <h3>Total Expenses</h3>
+                                <p class="amount" id="dashboard-sum-expense">0.00</p>
+                            </div>
+                        </div>
+                        <div class="card card-balance" onclick="showAccountBalancesBreakdown()"
+                            title="Click for account breakdown">
+                            <div class="metric-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                            <div>
+                                <h3>Total Balance</h3>
+                                <p class="amount" id="dashboard-sum-balance">0.00</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-two-col">
+                        <div class="card">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h3><i class="fa-solid fa-clock-rotate-left text-primary"></i> Recent Transactions</h3>
+                                <button class="btn-secondary" onclick="switchTab('transactions')"
+                                    style="padding: 4px 10px; font-size: 0.8rem; border-radius: 6px; font-weight: 600; cursor: pointer;">View
+                                    Full Ledger</button>
+                            </div>
+                            <div id="dashboard-recent-tx-list"
+                                style="display: flex; flex-direction: column; gap: 12px;">
+                                <!-- Dynamically loaded recent transactions -->
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h3><i class="fa-solid fa-wallet text-warning"></i> Quick Account Access</h3>
+                                <button class="btn-secondary" onclick="switchTab('accounts')"
+                                    style="padding: 4px 10px; font-size: 0.8rem; border-radius: 6px; font-weight: 600; cursor: pointer;">Manage
+                                    Accounts</button>
+                            </div>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Live
+                                synchronized checking and savings vaults</p>
+                            <div id="dashboard-accounts-list" style="display: flex; flex-direction: column; gap: 10px;">
+                                <!-- Dynamically loaded mini account rows -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Secondary Grid -->
+                    <div class="grid-two-col" style="margin-top: 20px;">
+                        <!-- Left: Monthly Budget Burn Speed -->
+                        <div class="card">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h3><i class="fa-solid fa-fire text-danger"></i> Monthly Salary Spend Speed</h3>
+                                <span id="dashboard-days-left"
+                                    style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">🗓️ -- Days
+                                    Left</span>
+                            </div>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Ratio of total
+                                spending compared to salary</p>
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">
+                                <span>Salary Burn Progress</span>
+                                <span id="dashboard-salary-ratio">$0.00 / $0.00</span>
+                            </div>
+                            <div class="progress-container" style="height: 12px; margin: 0; border-radius: 6px;">
+                                <div id="dashboard-salary-progress" class="progress-bar bar-success"
+                                    style="width: 0%; border-radius: 6px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Expenses Category Breakdown -->
+                        <div class="card">
+                            <h3><i class="fa-solid fa-chart-pie text-primary"></i> Category Spending Distribution</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Real-time
+                                expense distribution by category group</p>
+                            <div id="dashboard-expense-categories"
+                                style="display: flex; flex-direction: column; gap: 10px;">
+                                <!-- Dynamically loaded categories progress bars -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transactions Ledger Panel -->
+                <div id="view-transactions" class="view-panel hidden">
+                    <div class="card" style="margin-bottom: 20px; padding: 1.25rem;">
+                        <div class="toolbar-flex"
+                            style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+                            <div style="position: relative; flex: 1; min-width: 250px;">
+                                <i class="fa-solid fa-magnifying-glass"
+                                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                                <input type="text" id="tx-search-input"
+                                    placeholder="Search description, category, or account..."
+                                    oninput="handleTxSearchAndFilter()"
+                                    style="width: 100%; padding: 10px 12px 10px 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main); font-size: 0.9rem;">
+                            </div>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <select id="tx-filter-category" onchange="handleTxSearchAndFilter()"
+                                    style="padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main); font-size: 0.9rem; font-weight: 500;">
+                                    <option value="all">All Categories</option>
+                                    <option value="Salary">Salary</option>
+                                    <option value="Freelance">Freelance</option>
+                                    <option value="Food & Dining">Food & Dining</option>
+                                    <option value="Transport">Transport</option>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Shopping">Shopping</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                </select>
+                                <select id="tx-filter-method" onchange="handleTxSearchAndFilter()"
+                                    style="padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main); font-size: 0.9rem; font-weight: 500;">
+                                    <option value="all">All Methods</option>
+                                    <option value="Bank">Bank Transfer</option>
+                                    <option value="Scan to Pay">Scan to Pay</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Credit Card">Credit Card</option>
+                                </select>
+                                <button class="btn-secondary" onclick="resetTxFilters()"
+                                    style="padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main);">
+                                    <i class="fa-solid fa-filter-circle-xmark"></i> Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div id="debug-tx-info" style="font-size:0.8rem; color:var(--text-muted); padding:10px; border-bottom:1px solid var(--border); font-family:monospace; background:rgba(0,0,0,0.02);"></div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="cursor: pointer; user-select: none;" onclick="toggleTxSort('date')"
+                                        title="Click to sort by date">
+                                        Date <span id="sort-icon-date"
+                                            style="font-size:0.75rem; margin-left:3px; color:var(--primary);">▼</span>
+                                    </th>
+                                    <th>Description / Account</th>
+                                    <th>Category</th>
+                                    <th>Type</th>
+                                    <th>Method</th>
+                                    <th style="cursor: pointer; user-select: none;" onclick="toggleTxSort('amount')"
+                                        title="Click to sort by amount">
+                                        Amount <span id="sort-icon-amount"
+                                            style="font-size:0.75rem; margin-left:3px; color:var(--text-muted);">↕</span>
+                                    </th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tx-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Income Panel -->
+                <div id="view-income" class="view-panel hidden">
+                    <div class="metrics-grid">
+                        <div class="card card-income" style="cursor: default;">
+                            <div class="metric-icon"><i class="fa-solid fa-arrow-down"></i></div>
+                            <div>
+                                <h3>Total Income</h3>
+                                <p class="amount" id="income-sum-total">0.00</p>
+                            </div>
+                        </div>
+                        <div class="card" style="border-left: 4px solid var(--primary);">
+                            <div class="metric-icon" style="background: rgba(79, 70, 229, 0.1); color: var(--primary);">
+                                <i class="fa-solid fa-calculator"></i>
+                            </div>
+                            <div>
+                                <h3>Avg Deposit</h3>
+                                <p class="amount" id="income-avg-deposit">0.00</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-two-col" style="margin-bottom: 20px;">
+                        <div class="card">
+                            <h3><i class="fa-solid fa-chart-pie text-success"></i> Income Source Contribution</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Percentage
+                                breakdown of your earnings</p>
+                            <div id="income-contribution-bars"
+                                style="display: flex; flex-direction: column; gap: 12px;">
+                                <!-- Progress bars injected here -->
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fa-solid fa-circle-info text-primary"></i> Income Insights</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Direct deposit
+                                and earnings tracking</p>
+                            <div style="font-size: 0.9rem; line-height: 1.6; color: var(--text-main);">
+                                <p><i class="fa-solid fa-circle-check text-success"></i> <strong>Steady Inflow:</strong>
+                                    All direct earnings automatically synchronize with linked account ledgers.</p>
+                                <p style="margin-top: 10px;"><i class="fa-solid fa-lightbulb text-warning"></i>
+                                    <strong>Tip:</strong> Create savings goals to move a portion of this income into
+                                    specialized vaults.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-bottom:15px;">Income Streams Ledger</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Income Source</th>
+                                    <th>Category</th>
+                                    <th>Deposited To</th>
+                                    <th>Method</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="income-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Expenses Panel -->
+                <div id="view-expenses" class="view-panel hidden">
+                    <div class="metrics-grid">
+                        <div class="card card-expense" style="cursor: default;">
+                            <div class="metric-icon"><i class="fa-solid fa-arrow-up"></i></div>
+                            <div>
+                                <h3>Total Spent</h3>
+                                <p class="amount" id="expense-sum-total">0.00</p>
+                            </div>
+                        </div>
+                        <div class="card" style="border-left: 4px solid var(--warning);">
+                            <div class="metric-icon"
+                                style="background: rgba(245, 158, 11, 0.1); color: var(--warning);"><i
+                                    class="fa-solid fa-chart-line"></i></div>
+                            <div>
+                                <h3>Remaining Budget</h3>
+                                <p class="amount" id="expense-remaining-budget">0.00</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-two-col" style="margin-bottom: 20px;">
+                        <div class="card">
+                            <h3><i class="fa-solid fa-fire text-danger"></i> Budget Burn Rate</h3>
+                            <p id="expense-budget-label"
+                                style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">$0.00 spent
+                                of $2,000.00 budget limit</p>
+                            <div class="progress-container" style="height: 24px; border-radius: 8px; margin: 0;">
+                                <div id="expense-budget-progress-bar" class="progress-bar bar-success"
+                                    style="width: 0%; font-size: 0.85rem; font-weight: bold; transition: width 0.4s ease;">
+                                    0% Used</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fa-solid fa-shield-halved text-warning"></i> Spending Monitor</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Monthly
+                                spending risk level</p>
+                            <div style="font-size: 0.9rem; line-height: 1.6; color: var(--text-main);">
+                                <p id="expense-burn-warning-text"><i class="fa-solid fa-circle-check text-success"></i>
+                                    <strong>Safe Zone:</strong> Your spending speed is well within safe limits for this
+                                    month.
+                                </p>
+                                <p style="margin-top: 10px;"><i class="fa-solid fa-qrcode text-warning"></i>
+                                    <strong>Tip:</strong> Pay using QR Scanner inside the app to automatically track and
+                                    tag utility bills.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-bottom:15px;">Expenses Ledger</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Merchant / Details</th>
+                                    <th>Category</th>
+                                    <th>Paid From</th>
+                                    <th>Method</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expense-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+
+                <div id="view-accounts" class="view-panel hidden">
+                    <div class="accounts-dashboard-flex">
+                        <div class="accounts-header-row" style="margin-bottom: 20px;">
+                            <h3>Your Registered Accounts</h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">Balances synchronize automatically
+                                as you create or delete transactions.</p>
+                        </div>
+
+                        <div id="accounts-cards-grid" class="grid-three-col" style="margin-bottom: 30px;">
+                            <!-- Dynamically loaded bank account cards -->
+                        </div>
+
+                        <div class="grid-two-col">
+                            <!-- Add Account Card -->
+                            <div class="card">
+                                <h3><i class="fa-solid fa-plus-circle text-primary"></i> Add Account Ledger</h3>
+                                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Register
+                                    checking, savings, card, or asset balances.</p>
+                                <form onsubmit="addNewBankAccount(event)">
+                                    <div class="input-group">
+                                        <label>Account Name</label>
+                                        <input type="text" id="acc-name-input"
+                                            placeholder="e.g., Chase Checking, Vault Savings" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Account Ledger Type</label>
+                                        <select id="acc-type-input">
+                                            <option value="Checking">Checking Account</option>
+                                            <option value="Savings">Savings Vault</option>
+                                            <option value="Credit Card">Credit Card Ledger</option>
+                                            <option value="Investment">Investment Portfolio</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Initial Balance (USD Base)</label>
+                                        <input type="number" id="acc-bal-input" placeholder="0.00" step="0.01" required>
+                                    </div>
+                                    <button type="submit" class="btn-primary btn-full-width"
+                                        style="padding: 10px; font-weight: bold; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-circle-check"></i> Register Account
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Transfer Funds Card -->
+                            <div class="card">
+                                <h3><i class="fa-solid fa-money-bill-transfer text-warning"></i> Internal Funds Transfer
+                                </h3>
+                                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Debit one
+                                    account to credit another instantly.</p>
+                                <form onsubmit="executeInternalTransfer(event)">
+                                    <div class="input-group">
+                                        <label>Source Account (Debit)</label>
+                                        <select id="transfer-from-select" required>
+                                            <!-- Dynamically loaded accounts -->
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Destination Account (Credit)</label>
+                                        <select id="transfer-to-select" required>
+                                            <!-- Dynamically loaded accounts -->
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Transfer Amount (USD Base)</label>
+                                        <input type="number" id="transfer-amt-input" placeholder="0.00" step="0.01"
+                                            required>
+                                    </div>
+                                    <button type="submit" class="btn-primary btn-full-width"
+                                        style="padding: 10px; font-weight: bold; margin-top: 10px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-bolt"></i> Authorize Transfer
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-reports" class="view-panel hidden">
+                    <div class="grid-two-col">
+                        <!-- Left Column: Conic Chart -->
+                        <div class="card text-center"
+                            style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <h3><i class="fa-solid fa-chart-pie text-primary"></i> Expense Distribution</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Visual
+                                breakdown of monthly expenses</p>
+                            <div id="reports-conic-chart"
+                                style="width: 200px; height: 200px; border-radius: 50%; margin: 20px auto; box-shadow: var(--shadow-md); transition: background 0.3s ease;">
+                            </div>
+                            <div id="reports-legend"
+                                style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 15px;">
+                                <!-- Dynamically loaded legend badges -->
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Category Budgets Performance -->
+                        <div class="card">
+                            <h3><i class="fa-solid fa-list-check text-success"></i> Category Budget Limits & Performance
+                            </h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Customize and
+                                track monthly limits per category group</p>
+                            <form onsubmit="saveCategoryBudgets(event)"
+                                style="display: flex; flex-direction: column; gap: 15px; margin: 0;">
+                                <div id="reports-budget-list"
+                                    style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 10px;">
+                                    <!-- Dynamically loaded budgets progress bars with inputs -->
+                                </div>
+                                <button type="submit" class="btn-primary btn-full-width"
+                                    style="padding: 10px; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 6px; border-radius: 8px;">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save Category Budgets
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-goals" class="view-panel hidden">
+                    <div class="accounts-header-row" style="margin-bottom: 20px;">
+                        <h3>Active Savings Goals & Milestones</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Set financial targets and track your
+                            savings progress.</p>
+                    </div>
+
+                    <!-- Goals Summary Stats Panel -->
+                    <div class="card"
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 1.5rem;">
+                        <div style="display: flex; gap: 40px; align-items: center;">
+                            <div>
+                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Overall
+                                    Target Savings</span>
+                                <h2 id="goals-total-target-val"
+                                    style="font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-top: 4px;">
+                                    $0.00</h2>
+                            </div>
+                            <div style="border-left: 1px solid var(--border); height: 40px;"></div>
+                            <div>
+                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Total
+                                    Saved Milestones</span>
+                                <h2 id="goals-total-saved-val"
+                                    style="font-size: 1.8rem; font-weight: 800; color: var(--success); margin-top: 4px;">
+                                    $0.00</h2>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span
+                                style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-align: right;">Overall
+                                Progress</span>
+                            <div id="goals-progress-circle"
+                                style="width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: conic-gradient(var(--primary) 0%, var(--border) 0%); transition: background 0.3s ease; box-shadow: var(--shadow-sm);">
+                                <div id="goals-overall-pct"
+                                    style="width: 43px; height: 43px; border-radius: 50%; background: var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: var(--text-main);">
+                                    0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-two-col">
+                        <!-- Left Column: Goals list -->
+                        <div>
+                            <div id="goals-cards-grid" style="display: flex; flex-direction: column; gap: 20px;">
+                                <!-- Dynamically loaded goals -->
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Add Goal Form -->
+                        <div class="card">
+                            <h3><i class="fa-solid fa-bullseye text-primary"></i> Create Savings Goal</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Define a new
+                                target to set aside savings.</p>
+                            <form onsubmit="addNewGoal(event)">
+                                <div class="input-group">
+                                    <label>Goal Name</label>
+                                    <input type="text" id="goal-name-input" placeholder="e.g., Tech Fund, Tesla Model 3"
+                                        required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Target Amount (USD Base)</label>
+                                    <input type="number" id="goal-target-input" placeholder="5000.00" step="0.01"
+                                        required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Initial Amount (Optional)</label>
+                                    <input type="number" id="goal-current-input" placeholder="0.00" step="0.01"
+                                        value="0.00">
+                                </div>
+                                <div class="input-group">
+                                    <label>Target Date (Optional)</label>
+                                    <input type="date" id="goal-date-input">
+                                </div>
+                                <button type="submit" class="btn-primary btn-full-width"
+                                    style="padding: 10px; font-weight: bold; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-circle-check"></i> Register Goal
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-settings" class="view-panel hidden">
+                    <div class="grid-two-col">
+                        <!-- Left: Profile Settings -->
+                        <div class="card">
+                            <h3><i class="fa-solid fa-user-gear text-primary"></i> User Profile Settings</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Manage your
+                                account details and login credentials.</p>
+
+                            <div
+                                style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px; background: rgba(79, 70, 229, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(79, 70, 229, 0.1);">
+                                <div id="settings-profile-avatar" class="avatar"
+                                    style="width: 60px; height: 60px; font-size: 1.5rem;">U</div>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <h4 style="font-size: 1.1rem; color: var(--text-main);">Node Vault Details</h4>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">Node ID: <strong
+                                            id="settings-vault-node-id"
+                                            style="color: var(--primary);">0x00000000</strong></span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">Last Active: <span
+                                            id="settings-vault-last-login">--</span></span>
+                                </div>
+                            </div>
+
+                            <form onsubmit="updateUserProfile(event)">
+                                <div class="grid-two-col">
+                                    <div class="input-group">
+                                        <label>Full Name</label>
+                                        <input type="text" id="settings-profile-name" required placeholder="Full Name">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Email Address</label>
+                                        <input type="email" id="settings-profile-email" required
+                                            placeholder="Email Address">
+                                    </div>
+                                </div>
+                                <div class="grid-two-col">
+                                    <div class="input-group">
+                                        <label>Phone Number</label>
+                                        <input type="tel" id="settings-profile-phone" placeholder="e.g., +1 555-0199">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>New Password</label>
+                                        <input type="password" id="settings-profile-password"
+                                            placeholder="Leave blank to keep current">
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Avatar Photo URL</label>
+                                    <input type="url" id="settings-profile-photo-url"
+                                        placeholder="https://example.com/avatar.png" oninput="previewSettingsAvatar()">
+                                </div>
+                                <div class="input-group">
+                                    <label>Home/Billing Address</label>
+                                    <input type="text" id="settings-profile-address"
+                                        placeholder="123 Main St, City, Country">
+                                </div>
+                                <button type="submit" class="btn-primary btn-full-width"
+                                    style="padding: 10px; font-weight: bold; margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Right: System Configurations -->
+                        <div class="card">
+                            <h3><i class="fa-solid fa-sliders text-warning"></i> System Preferences</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Configure your
+                                global app options.</p>
+
+                            <form onsubmit="updateSystemPreferences(event)">
+                                <div class="input-group">
+                                    <label style="color:var(--primary); font-weight:bold;"><i
+                                            class="fa-solid fa-coins"></i>
+                                        System Display Currency</label>
+                                    <select id="currency-toggle-select" onchange="handleCurrencyConversionChange()">
+                                        <option value="USD">USD ($) - US Dollar Base</option>
+                                        <option value="INR">INR (₹) - Indian Rupee Engine</option>
+                                    </select>
+                                </div>
+                                <div class="input-group" style="margin-top: 15px;">
+                                    <label style="color:var(--primary); font-weight:bold;"><i
+                                            class="fa-solid fa-hand-holding-dollar"></i>
+                                        Monthly Budget Limit</label>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <span id="settings-budget-currency-symbol"
+                                            style="font-weight: bold; font-size: 1.1rem; color: var(--text-main);">₹</span>
+                                        <input type="number" id="settings-budget-limit-input" step="0.01" min="0"
+                                            required placeholder="e.g., 2000" style="flex: 1;">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary btn-full-width"
+                                    style="padding: 10px; font-weight: bold; margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save Preferences
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-ai-advisor" class="view-panel hidden">
+                    <div class="ai-advisor-container">
+                        <!-- AI Header Card -->
+                        <div class="card card-ai-header">
+                            <div class="ai-header-content">
+                                <div class="ai-avatar-glow">
+                                    <i class="fa-solid fa-brain ai-brain-pulse"></i>
+                                </div>
+                                <div class="ai-welcome">
+                                    <h2>MyFin AI Financial Advisor</h2>
+                                    <p>Deep analytical insights based on your spending history, transaction channels,
+                                        and budget burn rates.</p>
+                                </div>
+                            </div>
+                            <div class="ai-financial-health">
+                                <span class="health-label">Financial Score</span>
+                                <div class="health-circle-outer">
+                                    <div class="health-score-value" id="ai-health-score">--</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Key Metrics Summary -->
+                        <div class="metrics-grid" style="margin-top: 20px; margin-bottom: 20px;">
+                            <div class="card card-ai-summary">
+                                <div class="metric-title-flex">
+                                    <i class="fa-solid fa-scale-balanced text-primary"></i>
+                                    <h4>Net Monthly Savings</h4>
+                                </div>
+                                <p class="amount" id="ai-savings-value">$0.00</p>
+                                <span class="subtext" id="ai-savings-rate">Savings Rate: --%</span>
+                            </div>
+                            <div class="card card-ai-summary">
+                                <div class="metric-title-flex">
+                                    <i class="fa-solid fa-fire text-danger"></i>
+                                    <h4>Burn Rate Speed</h4>
+                                </div>
+                                <p class="amount" id="ai-burn-value">$0.00</p>
+                                <span class="subtext" id="ai-burn-rate">Burn Ratio: --%</span>
+                            </div>
+                        </div>
+
+                        <!-- AI Suggestions Cards -->
+                        <div class="card">
+                            <div class="card-title-header">
+                                <i class="fa-solid fa-lightbulb text-warning" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <h3 style="margin: 0;">Dynamic Advisory Insights</h3>
+                                    <p class="sub-heading"
+                                        style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.9rem;">Tailored
+                                        tips to manage losses, limit excessive budgets, and grow savings</p>
+                                </div>
+                            </div>
+                            <div id="ai-suggestions-list" class="suggestions-list-container" style="margin-top: 20px;">
+                                <!-- Suggestions will be dynamically injected here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-scan-pay" class="view-panel hidden">
+                    <div class="card text-center" style="max-width: 600px; margin: 0 auto;">
+                        <i class="fa-solid fa-qrcode text-primary" style="font-size: 2.5rem; margin-bottom: 10px;"></i>
+                        <h2>Simulated Scan to Pay (QR / UPI)</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 25px;">Scan a merchant QR code or select one
+                            of our premium partner outlets to make an instant secure payment.</p>
+
+                        <div class="qr-scanner-widget">
+                            <div class="scanner-viewfinder" id="scanner-box">
+                                <!-- Real/Simulated Web Camera stream -->
+                                <video id="scanner-webcam-video" autoplay playsinline class="hidden"
+                                    style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; border-radius: var(--radius);"></video>
+                                <div class="viewfinder-corner top-left"></div>
+                                <div class="viewfinder-corner top-right"></div>
+                                <div class="viewfinder-corner bottom-left"></div>
+                                <div class="viewfinder-corner bottom-right"></div>
+
+                                <!-- The scanning laser beam -->
+                                <div class="scanner-laser-beam"></div>
+
+                                <div class="scanner-inner-content" id="scanner-stage-idle">
+                                    <i class="fa-solid fa-camera qr-icon-large" style="opacity: 0.5;"></i>
+                                    <p style="margin-top: 10px; color: var(--text-muted);">Viewfinder Idle</p>
+                                </div>
+
+                                <div class="scanner-inner-content hidden" id="scanner-stage-scanning">
+                                    <div class="spinner-custom"></div>
+                                    <p style="margin-top: 15px; font-weight: 500;">Scanning QR Code...</p>
+                                </div>
+
+                                <div class="scanner-inner-content hidden" id="scanner-stage-processing">
+                                    <i class="fa-solid fa-lock auth-shield-pulse text-warning"
+                                        style="font-size: 3rem;"></i>
+                                    <p style="margin-top: 15px; font-weight: 500;">Securing & Processing Bank Node...
+                                    </p>
+                                </div>
+
+                                <div class="scanner-inner-content hidden" id="scanner-stage-success">
+                                    <div class="success-checkmark-circle">
+                                        <i class="fa-solid fa-circle-check text-success" style="font-size: 4rem;"></i>
+                                    </div>
+                                    <p style="margin-top: 15px; font-weight: bold; color: var(--success);">Payment
+                                        Successful!</p>
+                                    <p id="scan-success-details"
+                                        style="font-size: 0.9rem; color: var(--text-muted); margin-top: 5px;"></p>
+                                </div>
+
+                                <div class="scanner-inner-content hidden" id="scanner-stage-myqr"
+                                    style="z-index: 2; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 15px; background: var(--bg-card); position: absolute; top: 0; left: 0; border-radius: var(--radius);">
+                                    <h4 style="margin: 0 0 10px 0; color: var(--text-main); font-weight: 700;">My
+                                        Account QR Code</h4>
+                                    <div class="myqr-dropdown-container"
+                                        style="margin-bottom: 12px; width: 100%; max-width: 220px;">
+                                        <select id="myqr-account-select" onchange="updateMyQRDisplay()"
+                                            style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 500;">
+                                            <!-- Dynamically filled with active accounts -->
+                                        </select>
+                                    </div>
+                                    <div class="qr-code-viewfinder-wrapper"
+                                        style="background: white; padding: 10px; border-radius: 8px; box-shadow: var(--shadow-sm); display: inline-block;">
+                                        <img id="myqr-display-image" src="" alt="My Account QR"
+                                            style="width: 130px; height: 130px; display: block; border-radius: 4px;">
+                                    </div>
+                                    <p id="myqr-account-balance-label"
+                                        style="margin-top: 8px; font-size: 0.85rem; font-weight: 600; color: var(--primary);">
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Scan Controls -->
+                        <div id="scanner-controls-container" class="scanner-details-form"
+                            style="margin-top: 25px; text-align: left;">
+                            <div class="scan-source-toggle"
+                                style="margin-bottom: 20px; display: flex; justify-content: center; gap: 10px;">
+                                <button type="button" class="btn-primary" id="btn-toggle-sim"
+                                    onclick="setScanSource('sim')"
+                                    style="flex: 1; padding: 10px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; border: none; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-desktop"></i> Simulator Mode
+                                </button>
+                                <button type="button" class="btn-secondary" id="btn-toggle-cam"
+                                    onclick="setScanSource('cam')"
+                                    style="flex: 1; padding: 10px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main); display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-camera"></i> Live Web Camera
+                                </button>
+                                <button type="button" class="btn-secondary" id="btn-toggle-myqr"
+                                    onclick="setScanSource('myqr')"
+                                    style="flex: 1; padding: 10px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main); display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-qrcode"></i> Show My QR
+                                </button>
+                            </div>
+
+                            <div id="scanner-payment-details-group">
+                                <div class="input-group">
+                                    <label><i class="fa-solid fa-store"></i> Select Partner Outlet / Merchant / Our
+                                        Account</label>
+                                    <select id="scan-merchant-select" onchange="updateScanPlaceholderAmount()">
+                                        <optgroup label="Partner Merchants (Pay / Expense)">
+                                            <option value="Starbucks Coffee" data-type="merchant"
+                                                data-cat="Food & Dining" data-amt="6.50">Starbucks Coffee (Food & Dining
+                                                - $6.50)</option>
+                                            <option value="Whole Foods Market" data-type="merchant"
+                                                data-cat="Food & Dining" data-amt="74.20">Whole Foods Market (Food &
+                                                Dining - $74.20)</option>
+                                            <option value="Shell Fuel Station" data-type="merchant" data-cat="Transport"
+                                                data-amt="45.00">Shell Fuel Station (Transport - $45.00)</option>
+                                            <option value="Metro Transit Terminal" data-type="merchant"
+                                                data-cat="Transport" data-amt="2.75">Metro Transit Terminal (Transport -
+                                                $2.75)</option>
+                                            <option value="Netflix Premium" data-type="merchant"
+                                                data-cat="Entertainment" data-amt="15.49">Netflix Subscriptions
+                                                (Entertainment - $15.49)</option>
+                                        </optgroup>
+                                        <optgroup label="Our Bank Accounts (Deposit / Income)"
+                                            id="scan-our-accounts-group">
+                                            <!-- Dynamically loaded -->
+                                        </optgroup>
+                                    </select>
+                                </div>
+
+                                <div class="input-group">
+                                    <label><i class="fa-solid fa-receipt"></i> Custom Payment Amount (In USD
+                                        Base)</label>
+                                    <input type="number" id="scan-custom-amount"
+                                        placeholder="Or override with custom amount..." step="0.01">
+                                </div>
+
+                                <button class="btn-primary btn-full-width" id="btn-start-scan"
+                                    onclick="triggerScanPaymentFlow()"
+                                    style="margin-top: 15px; padding: 12px; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-credit-card"></i> Authenticate & Pay Now
+                                </button>
+                            </div>
+
+                            <!-- My QR Info Message -->
+                            <div id="myqr-info-message" class="hidden"
+                                style="margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); background: var(--bg-main); padding: 12px; border-radius: 8px; line-height: 1.4;">
+                                <i class="fa-solid fa-circle-info text-info"></i> <strong>Receive Mode Active:</strong>
+                                Share this screen containing your account's QR code. Senders can scan it to instantly
+                                transfer money into your account.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Transaction Receipt Modal -->
+    <div id="tx-detail-modal" class="modal-backdrop hidden">
+        <div class="modal-card" style="max-width: 450px; background: var(--bg-white);">
+            <div class="receipt-header" style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 2.5rem; color: var(--primary); margin-bottom: 5px;"><i
+                        class="fa-solid fa-receipt"></i></div>
+                <h2 style="font-weight: 800; font-size: 1.4rem;">Transaction Receipt</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem;" id="receipt-tx-id">TX ID: --</p>
+            </div>
+
+            <div class="receipt-body"
+                style="border: 2px dashed var(--border); border-left: none; border-right: none; padding: 15px 0; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Description</span>
+                    <span style="font-weight: bold; font-size: 0.95rem;" id="receipt-desc">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Date</span>
+                    <span style="font-weight: 500; font-size: 0.95rem;" id="receipt-date">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Category</span>
+                    <span class="badge" id="receipt-category" style="font-size: 0.8rem;">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Type</span>
+                    <span style="font-weight: bold; text-transform: uppercase;" id="receipt-type">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Payment Method</span>
+                    <span style="font-weight: 500;" id="receipt-method">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Linked Ledger</span>
+                    <span style="font-weight: 500;" id="receipt-account">--</span>
+                </div>
+            </div>
+
+            <div class="receipt-totals" style="text-align: center; margin-bottom: 20px;">
+                <p style="font-size: 0.9rem; color: var(--text-muted);">Total Amount</p>
+                <h2 style="font-size: 2.2rem; font-weight: 800;" id="receipt-amount">$0.00</h2>
+                <p style="font-size: 0.85rem; color: var(--primary); font-weight: 600; margin-top: 5px;"
+                    id="receipt-inr-conversion">₹0.00 INR</p>
+            </div>
+
+            <div
+                style="text-align: center; margin-bottom: 20px; font-family: monospace; font-size: 1.1rem; letter-spacing: 4px; opacity: 0.65; font-weight: bold;">
+                *MYFIN-SECURE-LEAD-NODE*
+            </div>
+
+            <div class="modal-actions" style="margin-top: 0;">
+                <button type="button" class="btn-secondary btn-full-width" onclick="hideTransactionDetails()">Close
+                    Receipt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Balances Modal -->
+    <div id="acc-balances-modal" class="modal-backdrop hidden">
+        <div class="modal-card" style="max-width: 450px; background: var(--bg-white);">
+            <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-university text-primary"></i> Account Balances
+                Breakdown</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Active linked accounts in your
+                wallet</p>
+            <div id="acc-balances-modal-list"
+                style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
+                <!-- Dynamically loaded -->
+            </div>
+            <div class="modal-actions" style="margin-top: 0;">
+                <button type="button" class="btn-primary btn-full-width"
+                    onclick="hideAccountBalancesBreakdown()">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="script.js?v=3"></script>
+</body>
+
+</html>
