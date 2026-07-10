@@ -10,7 +10,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
 
-DB_PATH = '/Users/nivashnivash/Downloads/finance.db'
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'finance.db')
 SECRET_KEY = b"finance_tracker_super_secure_secret_key_987654321"
 
 def get_db_connection():
