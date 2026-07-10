@@ -188,7 +188,7 @@ async function mockFetch(url, options) {
         if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
         const txs = getLocalTable('transactions');
         const userTxs = txs.filter(t => t.user_id === user_id);
-        return jsonResponse({ success: true, transactions: userTxs });
+        return jsonResponse(userTxs);
     }
     
     // Transactions (POST)
@@ -226,7 +226,7 @@ async function mockFetch(url, options) {
                 setLocalTable('bank_accounts', accs);
             }
         }
-        return jsonResponse({ success: true, transaction: newTx }, 201);
+        return jsonResponse(newTx, 201);
     }
     
     // Transactions (DELETE)
@@ -262,7 +262,7 @@ async function mockFetch(url, options) {
         if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
         const accs = getLocalTable('bank_accounts');
         const userAccs = accs.filter(a => a.user_id === user_id);
-        return jsonResponse({ success: true, accounts: userAccs });
+        return jsonResponse(userAccs);
     }
     
     // Accounts (POST)
@@ -280,7 +280,7 @@ async function mockFetch(url, options) {
         };
         accs.push(newAcc);
         setLocalTable('bank_accounts', accs);
-        return jsonResponse({ success: true, account: newAcc }, 201);
+        return jsonResponse(newAcc, 201);
     }
     
     // Accounts (DELETE)
@@ -354,7 +354,7 @@ async function mockFetch(url, options) {
         if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
         const goals = getLocalTable('goals');
         const userGoals = goals.filter(g => g.user_id === user_id);
-        return jsonResponse({ success: true, goals: userGoals });
+        return jsonResponse(userGoals);
     }
     
     // Goals (POST)
@@ -372,7 +372,7 @@ async function mockFetch(url, options) {
         };
         goals.push(newGoal);
         setLocalTable('goals', goals);
-        return jsonResponse({ success: true, goal: newGoal }, 201);
+        return jsonResponse(newGoal, 201);
     }
     
     // Goals (PUT)
@@ -386,7 +386,7 @@ async function mockFetch(url, options) {
         if (goalIndex === -1) return jsonResponse({ error: "Goal not found" }, 404);
         goals[goalIndex].current_amount = parseFloat(current_amount);
         setLocalTable('goals', goals);
-        return jsonResponse({ success: true, goal: goals[goalIndex] });
+        return jsonResponse(goals[goalIndex]);
     }
     
     // Goals (DELETE)
