@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script>
-        window.addEventListener('error', function(e) {
+        window.addEventListener('error', function (e) {
             const div = document.createElement('div');
             div.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:#ef4444;color:white;padding:15px;z-index:999999;font-weight:bold;text-align:center;font-family:monospace;box-shadow:0 4px 6px rgba(0,0,0,0.1);';
             div.textContent = 'JavaScript Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno;
@@ -511,7 +511,9 @@
                     </div>
 
                     <div class="card">
-                        <div id="debug-tx-info" style="font-size:0.8rem; color:var(--text-muted); padding:10px; border-bottom:1px solid var(--border); font-family:monospace; background:rgba(0,0,0,0.02);"></div>
+                        <div id="debug-tx-info"
+                            style="font-size:0.8rem; color:var(--text-muted); padding:10px; border-bottom:1px solid var(--border); font-family:monospace; background:rgba(0,0,0,0.02);">
+                        </div>
                         <table class="data-table">
                             <thead>
                                 <tr>
