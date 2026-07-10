@@ -1506,6 +1506,7 @@ async function removeTransactionRecord(idNum) {
 
 // --- 5. INTERFACE PANEL TAB MANAGEMENT ENG ROUTER ---
 function switchTab(viewName) {
+    closeSidebarOnMobile();
     // Release webcam tracks if navigating away from Scanner view
     if (viewName !== 'scan-pay') {
         stopWebcamStream();
@@ -3237,3 +3238,31 @@ window.toggleDarkTheme = toggleDarkTheme;
 window.handleTxSearchAndFilter = handleTxSearchAndFilter;
 window.updateMyQRDisplay = updateMyQRDisplay;
 window.updateScanPlaceholderAmount = updateScanPlaceholderAmount;
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar && overlay) {
+        if (sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        } else {
+            sidebar.classList.add('open');
+            overlay.classList.add('active');
+        }
+    }
+}
+
+function closeSidebarOnMobile() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar && overlay) {
+        if (sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        }
+    }
+}
+
+window.toggleSidebar = toggleSidebar;
+window.closeSidebarOnMobile = closeSidebarOnMobile;
