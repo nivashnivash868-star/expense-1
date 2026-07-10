@@ -2,6 +2,628 @@ const API_BASE = (window.location.hostname === 'localhost' || window.location.ho
     ? 'http://localhost:5001/api'
     : (window.location.origin.includes('http') ? `${window.location.origin}/api` : 'http://localhost:5001/api');
 
+// --- LOCAL STORAGE API MOCK FALLBACK FOR STATIC DEPLOYMENTS ---
+let USE_LOCAL_STORAGE = false;
+
+const originalFetch = window.fetch;
+
+function getLocalTable(name) {
+    const data = localStorage.getItem(`myfin_${name}`);
+    if (!data) {
+        if (name === 'users') {
+            const defaultUser = [{ id: 1, name: "Admin User", email: "admin@example.com", password: "password123", phone_number: "", avatar: "", address: "", budget_limit: 2000.00 }];
+            localStorage.setItem(`myfin_users`, JSON.stringify(defaultUser));
+            return defaultUser;
+        }
+        if (name === 'bank_accounts') {
+            const defaultAccounts = [
+                { id: 101, user_id: 1, name: "Checking Account (Primary)", type: "Checking", balance: 1250.00 },
+                { id: 102, user_id: 1, name: "Savings Vault Ledger", type: "Savings", balance: 5000.00 }
+            ];
+            localStorage.setItem(`myfin_bank_accounts`, JSON.stringify(defaultAccounts));
+            return defaultAccounts;
+        }
+        return [];
+    }
+    return JSON.parse(data);
+}
+
+function setLocalTable(name, data) {
+    localStorage.setItem(`myfin_${name}`, JSON.stringify(data));
+}
+
+function jsonResponse(data, status = 200) {
+    return new Response(JSON.stringify(data), {
+        status: status,
+        headers: { 'Content-Type': 'application/json' }
+    });
+}
+
+function getAuthUserId(options) {
+    const authHeader = options?.headers?.['Authorization'] || options?.headers?.['authorization'];
+    if (!authHeader) return null;
+    const token = authHeader.replace('Bearer ', '');
+    return parseInt(token) || null;
+}
+
+async function checkBackendAvailability() {
+    try {
+        const res = await originalFetch(`${API_BASE}/auth/profile`, {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer test' }
+        });
+        if (res.status === 404 || (res.headers.get('content-type') && res.headers.get('content-type').includes('text/html'))) {
+            USE_LOCAL_STORAGE = true;
+        } else {
+            USE_LOCAL_STORAGE = false;
+        }
+    } catch (e) {
+        USE_LOCAL_STORAGE = true;
+    }
+    console.log("MyFin API mode:", USE_LOCAL_STORAGE ? "LocalStorage Mock Mode" : "Live Flask API Mode");
+}
+
+async function mockFetch(url, options) {
+    const method = options?.method || 'GET';
+    const path = url.replace(API_BASE, '');
+    
+    // Auth Signup
+    if (path === '/auth/signup' && method === 'POST') {
+        const { name, email, password } = JSON.parse(options.body);
+        if (!name || !email || !password) {
+            return jsonResponse({ error: "All fields are required" }, 400);
+        }
+        const users = getLocalTable('users');
+        if (users.find(u => u.email === email)) {
+            return jsonResponse({ error: "Email address already registered" }, 400);
+        }
+        const user_id = Date.now();
+        const newUser = { id: user_id, name, email, password, phone_number: "", avatar: "", address: "", budget_limit: 2000.00 };
+        users.push(newUser);
+        setLocalTable('users', users);
+        
+        const accounts = getLocalTable('bank_accounts');
+        accounts.push({ id: Date.now() + 1, user_id, name: "Checking Account (Primary)", type: "Checking", balance: 0.00 });
+        accounts.push({ id: Date.now() + 2, user_id, name: "Savings Vault Ledger", type: "Savings", balance: 0.00 });
+        setLocalTable('bank_accounts', accounts);
+
+        return jsonResponse({
+            success: true,
+            token: String(user_id),
+            user: { id: user_id, name, email, phone_number: "", avatar: "", address: "" }
+        }, 201);
+    }
+    
+    // Auth Login
+    if (path === '/auth/login' && method === 'POST') {
+        const { email, password } = JSON.parse(options.body);
+        const users = getLocalTable('users');
+        const user = users.find(u => u.email === email && u.password === password);
+        if (!user) {
+            return jsonResponse({ error: "Invalid email or password" }, 401);
+        }
+        return jsonResponse({
+            success: true,
+            token: String(user.id),
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                phone_number: user.phone_number || "",
+                avatar: user.avatar || "",
+                address: user.address || ""
+            }
+        });
+    }
+    
+    // Auth Profile (GET)
+    if (path === '/auth/profile' && method === 'GET') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const users = getLocalTable('users');
+        const user = users.find(u => u.id === user_id);
+        if (!user) return jsonResponse({ error: "User not found" }, 404);
+        return jsonResponse({
+            success: true,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                phone_number: user.phone_number || "",
+                avatar: user.avatar || "",
+                address: user.address || "",
+                budget_limit: user.budget_limit !== undefined ? user.budget_limit : 2000.00
+            }
+        });
+    }
+    
+    // Auth Profile (PUT)
+    if (path === '/auth/profile' && method === 'PUT') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const data = JSON.parse(options.body);
+        const users = getLocalTable('users');
+        const userIndex = users.findIndex(u => u.id === user_id);
+        if (userIndex === -1) return jsonResponse({ error: "User not found" }, 404);
+        
+        const user = users[userIndex];
+        if (data.name) user.name = data.name;
+        if (data.phone_number) user.phone_number = data.phone_number;
+        if (data.address) user.address = data.address;
+        if (data.avatar) user.avatar = data.avatar;
+        if (data.budget_limit !== undefined) user.budget_limit = parseFloat(data.budget_limit);
+        
+        users[userIndex] = user;
+        setLocalTable('users', users);
+        return jsonResponse({ success: true, user });
+    }
+    
+    // Auth Profile (DELETE)
+    if (path === '/auth/profile' && method === 'DELETE') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        
+        let users = getLocalTable('users');
+        users = users.filter(u => u.id !== user_id);
+        setLocalTable('users', users);
+        
+        let txs = getLocalTable('transactions');
+        txs = txs.filter(t => t.user_id !== user_id);
+        setLocalTable('transactions', txs);
+        
+        let accs = getLocalTable('bank_accounts');
+        accs = accs.filter(a => a.user_id !== user_id);
+        setLocalTable('bank_accounts', accs);
+        
+        let goals = getLocalTable('goals');
+        goals = goals.filter(g => g.user_id !== user_id);
+        setLocalTable('goals', goals);
+        
+        return jsonResponse({ success: true });
+    }
+    
+    // Transactions (GET)
+    if (path === '/transactions' && method === 'GET') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const txs = getLocalTable('transactions');
+        const userTxs = txs.filter(t => t.user_id === user_id);
+        return jsonResponse({ success: true, transactions: userTxs });
+    }
+    
+    // Transactions (POST)
+    if (path === '/transactions' && method === 'POST') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const data = JSON.parse(options.body);
+        const { amount, type, category, desc, method: txMethod, account_id } = data;
+        
+        const amtVal = parseFloat(amount);
+        const txs = getLocalTable('transactions');
+        const newTx = {
+            id: Date.now(),
+            user_id,
+            amount: amtVal,
+            type,
+            category,
+            desc,
+            date: new Date().toISOString().replace('T', ' ').substring(0, 19),
+            method: txMethod,
+            account_id: parseInt(account_id) || null
+        };
+        txs.push(newTx);
+        setLocalTable('transactions', txs);
+        
+        if (account_id) {
+            const accs = getLocalTable('bank_accounts');
+            const accIndex = accs.findIndex(a => a.id === parseInt(account_id) && a.user_id === user_id);
+            if (accIndex !== -1) {
+                if (type === 'income') {
+                    accs[accIndex].balance = parseFloat(accs[accIndex].balance) + amtVal;
+                } else {
+                    accs[accIndex].balance = parseFloat(accs[accIndex].balance) - amtVal;
+                }
+                setLocalTable('bank_accounts', accs);
+            }
+        }
+        return jsonResponse({ success: true, transaction: newTx }, 201);
+    }
+    
+    // Transactions (DELETE)
+    if (path.startsWith('/transactions/') && method === 'DELETE') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const tx_id = parseInt(path.replace('/transactions/', ''));
+        let txs = getLocalTable('transactions');
+        const tx = txs.find(t => t.id === tx_id && t.user_id === user_id);
+        if (!tx) return jsonResponse({ error: "Transaction not found" }, 404);
+        
+        if (tx.account_id) {
+            const accs = getLocalTable('bank_accounts');
+            const accIndex = accs.findIndex(a => a.id === tx.account_id && a.user_id === user_id);
+            if (accIndex !== -1) {
+                if (tx.type === 'income') {
+                    accs[accIndex].balance = parseFloat(accs[accIndex].balance) - parseFloat(tx.amount);
+                } else {
+                    accs[accIndex].balance = parseFloat(accs[accIndex].balance) + parseFloat(tx.amount);
+                }
+                setLocalTable('bank_accounts', accs);
+            }
+        }
+        
+        txs = txs.filter(t => t.id !== tx_id);
+        setLocalTable('transactions', txs);
+        return jsonResponse({ success: true });
+    }
+    
+    // Accounts (GET)
+    if (path === '/accounts' && method === 'GET') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const accs = getLocalTable('bank_accounts');
+        const userAccs = accs.filter(a => a.user_id === user_id);
+        return jsonResponse({ success: true, accounts: userAccs });
+    }
+    
+    // Accounts (POST)
+    if (path === '/accounts' && method === 'POST') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const { name, type, balance } = JSON.parse(options.body);
+        const accs = getLocalTable('bank_accounts');
+        const newAcc = {
+            id: Date.now(),
+            user_id,
+            name,
+            type,
+            balance: parseFloat(balance) || 0.00
+        };
+        accs.push(newAcc);
+        setLocalTable('bank_accounts', accs);
+        return jsonResponse({ success: true, account: newAcc }, 201);
+    }
+    
+    // Accounts (DELETE)
+    if (path.startsWith('/accounts/') && method === 'DELETE') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const acc_id = parseInt(path.replace('/accounts/', ''));
+        let accs = getLocalTable('bank_accounts');
+        const acc = accs.find(a => a.id === acc_id && a.user_id === user_id);
+        if (!acc) return jsonResponse({ error: "Account not found" }, 404);
+        accs = accs.filter(a => a.id !== acc_id);
+        setLocalTable('bank_accounts', accs);
+        return jsonResponse({ success: true });
+    }
+    
+    // Accounts Transfer
+    if (path === '/accounts/transfer' && method === 'POST') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const { source_account_id, target_account_id, amount } = JSON.parse(options.body);
+        const amtVal = parseFloat(amount);
+        if (amtVal <= 0) return jsonResponse({ error: "Transfer amount must be positive" }, 400);
+        
+        const accs = getLocalTable('bank_accounts');
+        const srcIndex = accs.findIndex(a => a.id === parseInt(source_account_id) && a.user_id === user_id);
+        const dstIndex = accs.findIndex(a => a.id === parseInt(target_account_id) && a.user_id === user_id);
+        
+        if (srcIndex === -1 || dstIndex === -1) {
+            return jsonResponse({ error: "Invalid accounts" }, 400);
+        }
+        if (accs[srcIndex].balance < amtVal) {
+            return jsonResponse({ error: "Insufficient balance" }, 400);
+        }
+        
+        accs[srcIndex].balance = parseFloat(accs[srcIndex].balance) - amtVal;
+        accs[dstIndex].balance = parseFloat(accs[dstIndex].balance) + amtVal;
+        setLocalTable('bank_accounts', accs);
+        
+        const txs = getLocalTable('transactions');
+        const dateStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        txs.push({
+            id: Date.now(),
+            user_id,
+            amount: amtVal,
+            type: "expense",
+            category: "Transfer",
+            desc: `Transfer Out to ${accs[dstIndex].name}`,
+            date: dateStr,
+            method: "Bank Transfer",
+            account_id: accs[srcIndex].id
+        });
+        txs.push({
+            id: Date.now() + 1,
+            user_id,
+            amount: amtVal,
+            type: "income",
+            category: "Transfer",
+            desc: `Transfer In from ${accs[srcIndex].name}`,
+            date: dateStr,
+            method: "Bank Transfer",
+            account_id: accs[dstIndex].id
+        });
+        setLocalTable('transactions', txs);
+        
+        return jsonResponse({ success: true });
+    }
+    
+    // Goals (GET)
+    if (path === '/goals' && method === 'GET') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const goals = getLocalTable('goals');
+        const userGoals = goals.filter(g => g.user_id === user_id);
+        return jsonResponse({ success: true, goals: userGoals });
+    }
+    
+    // Goals (POST)
+    if (path === '/goals' && method === 'POST') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const { name, target_amount, current_amount } = JSON.parse(options.body);
+        const goals = getLocalTable('goals');
+        const newGoal = {
+            id: Date.now(),
+            user_id,
+            name,
+            target_amount: parseFloat(target_amount),
+            current_amount: parseFloat(current_amount) || 0.00
+        };
+        goals.push(newGoal);
+        setLocalTable('goals', goals);
+        return jsonResponse({ success: true, goal: newGoal }, 201);
+    }
+    
+    // Goals (PUT)
+    if (path.startsWith('/goals/') && method === 'PUT') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const goal_id = parseInt(path.replace('/goals/', ''));
+        const { current_amount } = JSON.parse(options.body);
+        const goals = getLocalTable('goals');
+        const goalIndex = goals.findIndex(g => g.id === goal_id && g.user_id === user_id);
+        if (goalIndex === -1) return jsonResponse({ error: "Goal not found" }, 404);
+        goals[goalIndex].current_amount = parseFloat(current_amount);
+        setLocalTable('goals', goals);
+        return jsonResponse({ success: true, goal: goals[goalIndex] });
+    }
+    
+    // Goals (DELETE)
+    if (path.startsWith('/goals/') && method === 'DELETE') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        const goal_id = parseInt(path.replace('/goals/', ''));
+        let goals = getLocalTable('goals');
+        const goal = goals.find(g => g.id === goal_id && g.user_id === user_id);
+        if (!goal) return jsonResponse({ error: "Goal not found" }, 404);
+        goals = goals.filter(g => g.id !== goal_id);
+        setLocalTable('goals', goals);
+        return jsonResponse({ success: true });
+    }
+    
+    // AI suggestions (GET)
+    if (path === '/ai/suggestions' && method === 'GET') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        
+        const txs = getLocalTable('transactions').filter(t => t.user_id === user_id);
+        
+        let total_income = 0.0;
+        let total_expenses = 0.0;
+        const category_expenses = {};
+        
+        txs.forEach(t => {
+            const amt = parseFloat(t.amount);
+            if (t.type === 'income') {
+                total_income += amt;
+            } else {
+                total_expenses += amt;
+                category_expenses[t.category] = (category_expenses[t.category] || 0) + amt;
+            }
+        });
+        
+        const net_savings = total_income - total_expenses;
+        const savings_rate = total_income > 0 ? (net_savings / total_income * 100) : 0.0;
+        const burn_rate = total_income > 0 ? (total_expenses / total_income * 100) : (total_expenses > 0 ? 100.0 : 0.0);
+        
+        const suggestions = [];
+        
+        if (total_expenses > total_income) {
+            const deficit = total_expenses - total_income;
+            suggestions.push({
+                id: "loss_mitigation",
+                title: "Loss Mitigation Alert: Stop the Burn",
+                desc: `Your expenses exceed your income by $${deficit.toFixed(2)} this period! You are operating in a net deficit. We suggest immediately auditing subscription services, deferring large discretionary purchases, and creating a cash reserve.`,
+                priority: "high",
+                category: "Loss Management",
+                icon: "fa-triangle-exclamation",
+                action: "Disable auto-renewals on non-essential subscriptions and review dining logs."
+            });
+        } else if (total_income > 0 && savings_rate < 15.0) {
+            suggestions.push({
+                id: "savings_boost",
+                title: "Boost Your Savings Reserve",
+                desc: `Your current savings rate is ${savings_rate.toFixed(1)}%, which is lower than the recommended 20% baseline. Aim to optimize your utility bills or negotiate recurring insurance plans to increase margins.`,
+                priority: "medium",
+                category: "Savings Optimization",
+                icon: "fa-percent",
+                action: "Set a direct auto-transfer of 10% of income to your Savings Vault ledger on paydays."
+            });
+        } else if (total_income > 0) {
+            suggestions.push({
+                id: "wealth_growth",
+                title: "Healthy Financial Standing",
+                desc: `Congratulations! You saved ${savings_rate.toFixed(1)}% of your earnings ($${net_savings.toFixed(2)}). Operating with a surplus reduces financial anxiety. We advise funneling these savings into long-term investments or emergency assets.`,
+                priority: "low",
+                category: "Wealth Building",
+                icon: "fa-circle-check",
+                action: "Allocate 30% of this month's savings to your Savings Vault Vault."
+            });
+        }
+        
+        if (total_expenses > 0) {
+            let top_cat = null;
+            let top_amt = -1.0;
+            for (const cat in category_expenses) {
+                if (category_expenses[cat] > top_amt) {
+                    top_amt = category_expenses[cat];
+                    top_cat = cat;
+                }
+            }
+            if (top_cat) {
+                const cat_pct = (top_amt / total_expenses) * 100;
+                if (cat_pct > 30.0) {
+                    suggestions.push({
+                        id: "category_overspend",
+                        title: `High Spending in ${top_cat}`,
+                        desc: `${top_cat} makes up ${cat_pct.toFixed(1)}% ($${top_amt.toFixed(2)}) of your total monthly expenses. This concentration indicates a major opportunity for budget compression.`,
+                        priority: cat_pct > 50.0 ? "high" : "medium",
+                        category: "Category Cap",
+                        icon: "fa-chart-pie",
+                        action: `Set a strict budget threshold for ${top_cat} of 25% of your total expenses next month.`
+                    });
+                }
+            }
+        }
+        
+        const methods_used = txs.filter(t => t.type === 'expense').map(t => t.method);
+        const cash_count = methods_used.filter(m => m === 'Cash').length;
+        if (cash_count > 2) {
+            suggestions.push({
+                id: "incentivize_digital",
+                title: "Minimize Cash Leakages",
+                desc: "You have recorded several physical Cash transactions. Cash expenses are harder to audit. Switching to digital 'Bank Transfer' or 'Scan to Pay' provides automatic logging and instant cashbacks.",
+                priority: "low",
+                category: "Digital Efficiency",
+                icon: "fa-wallet",
+                action: "Use the new integrated Scan to Pay simulator for your daily retail purchases."
+            });
+        }
+        
+        if (suggestions.length < 3) {
+            suggestions.push({
+                id: "default_emergency",
+                title: "Emergency Fund Rule of Thumb",
+                desc: "Ensure you maintain liquid assets equivalent to 3-6 months of essential living expenses. Keep this ledger separate from checking reserves.",
+                priority: "low",
+                category: "Reserve planning",
+                icon: "fa-shield-halved",
+                action: "Ensure checking balance does not drop below your average monthly expenses."
+            });
+        }
+        
+        return jsonResponse({
+            summary: {
+                income: total_income,
+                expenses: total_expenses,
+                balance: net_savings,
+                savings_rate: savings_rate,
+                burn_rate: burn_rate
+            },
+            suggestions: suggestions
+        });
+    }
+    
+    // AI Chat (POST)
+    if (path === '/ai/chat' && method === 'POST') {
+        const user_id = getAuthUserId(options);
+        if (!user_id) return jsonResponse({ error: "Unauthorized access" }, 401);
+        
+        const { message } = JSON.parse(options.body);
+        const msg = (message || '').trim().toLowerCase();
+        
+        if (!msg) {
+            return jsonResponse({ reply: "I couldn't hear you. Please type a message!" });
+        }
+        
+        const txs = getLocalTable('transactions').filter(t => t.user_id === user_id);
+        const accs = getLocalTable('bank_accounts').filter(a => a.user_id === user_id);
+        const goals = getLocalTable('goals').filter(g => g.user_id === user_id);
+        const users = getLocalTable('users');
+        const user = users.find(u => u.id === user_id);
+        const budget_limit = user?.budget_limit !== undefined ? user.budget_limit : 2000.00;
+        
+        const total_income = txs.filter(t => t.type === 'income').reduce((acc, t) => acc + parseFloat(t.amount), 0);
+        const total_expenses = txs.filter(t => t.type === 'expense').reduce((acc, t) => acc + parseFloat(t.amount), 0);
+        const net_savings = total_income - total_expenses;
+        const savings_rate = total_income > 0 ? (net_savings / total_income * 100) : 0;
+        
+        const total_balance = accs.reduce((acc, a) => acc + parseFloat(a.balance), 0);
+        const checking_balance = accs.filter(a => a.type === 'Checking').reduce((acc, a) => acc + parseFloat(a.balance), 0);
+        const savings_balance = accs.filter(a => a.type === 'Savings').reduce((acc, a) => acc + parseFloat(a.balance), 0);
+        
+        const total_goal_target = goals.reduce((acc, g) => acc + parseFloat(g.target_amount), 0);
+        const total_goal_saved = goals.reduce((acc, g) => acc + parseFloat(g.current_amount), 0);
+        const goal_progress = total_goal_target > 0 ? (total_goal_saved / total_goal_target * 100) : 0;
+        
+        let reply = "";
+        
+        if (msg.includes('savings') || msg.includes('rate') || msg.includes('save')) {
+            if (total_income === 0) {
+                reply = "You don't have any income registered yet! Add your Salary or Freelance records to let me calculate your savings rate.";
+            } else {
+                reply = `Your Net Income is $${total_income.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} against Total Expenses of $${total_expenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}. This gives you a **Net Savings Rate of ${savings_rate.toFixed(1)}%** (Total Saved: $${net_savings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}). Keeping your savings rate above 20% is recommended for healthy milestone progression.`;
+            }
+        } else if (msg.includes('budget') || msg.includes('limit') || msg.includes('remaining')) {
+            const limit = budget_limit;
+            const remaining = limit - total_expenses;
+            const pct = limit > 0 ? (total_expenses / limit * 100) : 0;
+            if (remaining <= 0) {
+                reply = `🚨 **Alert:** You have exceeded your monthly budget limit of $${limit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}! Total spent is $${total_expenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}. Please restrict discretionary spending.`;
+            } else {
+                reply = `You have spent **$${total_expenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}** out of your monthly limit of **$${limit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}** (${pct.toFixed(1)}% used). You have **$${remaining.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} remaining** to spend safely this month.`;
+            }
+        } else if (msg.includes('balance') || msg.includes('account') || msg.includes('wallet')) {
+            const acc_details = accs.map(a => `${a.name} (${a.type}: $${parseFloat(a.balance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})`).join(', ');
+            reply = `Your total wallet balance is **$${total_balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}**.\n\n**Breakdown:**\n- Checking: $${checking_balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n- Savings: $${savings_balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n\n**Linked Nodes:** ${acc_details ? acc_details : 'No accounts linked.'}`;
+        } else if (msg.includes('goals') || msg.includes('milestone') || msg.includes('target')) {
+            if (goals.length === 0) {
+                reply = "You do not have any savings goals active! Navigate to the **Goals** tab to set a milestone target for tech purchases, emergencies, or travels.";
+            } else {
+                const goal_details = goals.map(g => `- **${g.name}**: $${parseFloat(g.current_amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} of $${parseFloat(g.target_amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} saved`).join('\n');
+                reply = `You have **${goals.length} active savings goals**.\n\nYour overall targets total **$${total_goal_target.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}**, of which you have saved **$${total_goal_saved.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}** (${goal_progress.toFixed(1)}% complete).\n\n**Milestones:**\n${goal_details}`;
+            }
+        } else if (msg.includes('help') || msg.includes('hello') || msg.includes('hi') || msg.includes('hey')) {
+            reply = "Hello! I am your MyFin Chatbot assistant. You can ask me:\n1. *'What is my savings rate?'*\n2. *'What is my remaining budget?'*\n3. *'Show my account balances'* \n4. *'What are my active goals?'*";
+        } else if (msg.includes('tip') || msg.includes('suggest') || msg.includes('advice')) {
+            if (total_expenses > 1500) {
+                reply = "💡 **Tip:** Your budget burn rate is currently high. We suggest deferring non-essential Shopping or Entertainment logs to next month.";
+            } else {
+                reply = "💡 **Tip:** Your spending speed is healthy! Consider setting up a target goal to direct 15% of your checking balance automatically to your savings vault.";
+            }
+        } else {
+            const category_sums = {};
+            txs.forEach(t => {
+                if (t.type === 'expense') {
+                    category_sums[t.category] = (category_sums[t.category] || 0) + parseFloat(t.amount);
+                }
+            });
+            const categories = Object.keys(category_sums);
+            if (categories.length > 0) {
+                const top_cat = categories.reduce((a, b) => category_sums[a] > category_sums[b] ? a : b);
+                const top_val = category_sums[top_cat];
+                reply = `I parsed your ledgers! Your top expense category is **${top_cat}** with total spending of **$${top_val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}**. Ask me about savings, budget limits, or wallet balances for more specific answers!`;
+            } else {
+                reply = "I'm not sure how to answer that question. Try asking about your **savings rate**, **remaining budget**, **account balances**, or active **milestone goals**!";
+            }
+        }
+        
+        return jsonResponse({ reply });
+    }
+    
+    return jsonResponse({ error: "Endpoint mock not implemented" }, 404);
+}
+
+window.fetch = async function(url, options) {
+    if (USE_LOCAL_STORAGE && typeof url === 'string' && url.startsWith(API_BASE)) {
+        return mockFetch(url, options);
+    }
+    return originalFetch(url, options);
+};
+
+checkBackendAvailability();
+
 let transactionDatabase = [];
 
 let activeViewFilter = 'dashboard';
