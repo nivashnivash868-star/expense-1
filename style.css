@@ -261,6 +261,12 @@ input:checked+.slider-toggle-btn:before {
     margin-bottom: 2rem;
 }
 
+.header-main-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1415,7 +1421,7 @@ body.dark-mode .btn-qr-show:hover {
     .main-content {
         margin-left: 0 !important;
         padding: 1.25rem !important;
-        padding-top: 5.5rem !important;
+        padding-top: 7rem !important; /* increased to prevent header overlapping cards */
     }
     
     /* Content Header layout adjustments */
@@ -1426,15 +1432,21 @@ body.dark-mode .btn-qr-show:hover {
         right: 0;
         background: var(--bg-white);
         border-bottom: 1px solid var(--border);
-        padding: 1rem 1.25rem;
+        padding: 0.75rem 1.25rem !important;
         z-index: 900;
         margin-bottom: 0;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+    }
+    
+    .header-main-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100% !important;
     }
     
     .header-title-area {
@@ -1442,20 +1454,23 @@ body.dark-mode .btn-qr-show:hover {
     }
     
     .header-title-area h1 {
-        font-size: 1.3rem !important;
+        font-size: 1.25rem !important;
+        margin: 0;
     }
     
     .header-title-area p {
         font-size: 0.75rem !important;
+        margin: 2px 0 0 0;
     }
     
     /* Stack/wrap action buttons dynamically on mobile */
     .header-actions {
-        width: 100%;
-        display: flex;
-        flex-wrap: wrap;
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
         gap: 8px !important;
-        margin-top: 0.5rem;
+        margin-top: 0 !important;
+        justify-content: flex-start !important;
     }
     
     .header-actions button {

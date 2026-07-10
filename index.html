@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance Tracker - Premium Dashboard</title>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -130,10 +130,12 @@
 
         <main class="main-content">
             <header class="content-header">
-                <button class="mobile-toggle-btn" id="mobile-toggle-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
-                <div class="header-title-area">
-                    <h1 id="page-title">Dashboard</h1>
-                    <p id="page-subtitle">Overview of your finances</p>
+                <div class="header-main-row">
+                    <button class="mobile-toggle-btn" id="mobile-toggle-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+                    <div class="header-title-area">
+                        <h1 id="page-title">Dashboard</h1>
+                        <p id="page-subtitle">Overview of your finances</p>
+                    </div>
                 </div>
                 <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
                     <button class="btn-secondary" id="header-btn-guide" onclick="showWelcomeOnboardingModal()"
@@ -1265,7 +1267,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="script.js?v=7"></script>
+    <script src="script.js?v=8"></script>
 </body>
 
 </html>
