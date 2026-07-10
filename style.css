@@ -1318,6 +1318,15 @@ body.dark-mode .btn-qr-show:hover {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    margin-top: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.data-table-container .data-table {
+    margin: 0;
+    width: 100%;
+    min-width: 750px; /* guarantees readable columns even on mobile screens! */
 }
 
 @media (max-width: 1024px) {
@@ -1462,9 +1471,30 @@ body.dark-mode .btn-qr-show:hover {
         gap: 1rem;
     }
     
+    .grid-two-col {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .grid-three-col {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .scan-source-toggle {
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 8px !important;
+    }
+    
+    .scan-source-toggle button {
+        width: 100% !important;
+        flex: none !important;
+    }
+    
     .card {
         padding: 1rem;
-        overflow-x: auto;
+        overflow-x: visible !important;
     }
     
     /* Adjust modal cards for mobile margins */
