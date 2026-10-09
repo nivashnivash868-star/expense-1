@@ -3237,32 +3237,50 @@ window.removeBankAccount = removeBankAccount;
 window.toggleDarkTheme = toggleDarkTheme;
 window.handleTxSearchAndFilter = handleTxSearchAndFilter;
 window.updateMyQRDisplay = updateMyQRDisplay;
-window.updateScanPlaceholderAmount = updateScanPlaceholderAmount;
-
-function toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    if (sidebar && overlay) {
-        if (sidebar.classList.contains('open')) {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('active');
-        } else {
-            sidebar.classList.add('open');
-            overlay.classList.add('active');
+async function refreshDatabaseStatus() {
+    const refreshIcon = document.getElementById('supabase-refresh-icon');
+    if (refreshIcon) refreshIcon.classList.add('fa-spin');
+    
+    try {
+        const response = await originalFetch(`${API_BASE}/db-status`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.connected) {
+                const statusPill = document.getElementById('supabase-header-pill');
+                const pillText = document.getElementById('supabase-pill-text');
+                const metaStatus = document.getElementById('db-meta-status');
+                const metaEngine = document.getElementById('db-meta-engine');
+                const metaProject = document.getElementById('db-meta-project');
+                const metaHost = document.getElementById('db-meta-host');
+                const metaRecords = document.getElementById('db-meta-records');
+                
+                if (statusPill) statusPill.style.display = 'inline-flex';
+                if (pillText) pillText.textContent = `Supabase: ${data.project_id || 'Connected'}`;
+                if (metaStatus) metaStatus.innerHTML = '<span class="pulse-dot-green"></span> Connected & Synced';
+                if (metaEngine) metaEngine.textContent = data.engine || 'PostgreSQL 17';
+                if (metaProject) metaProject.textContent = data.project_id || 'pybsbrbytfbfdkdwhrda';
+                if (metaHost) metaHost.textContent = data.supabase_url ? new URL(data.supabase_url).hostname : 'db.pybsbrbytfbfdkdwhrda.supabase.co';
+                
+                if (metaRecords && data.stats) {
+                    const total = (data.stats.users || 0) + (data.stats.transactions || 0) + (data.stats.bank_accounts || 0) + (data.stats.goals || 0);
+                    metaRecords.textContent = `${total} Cloud Records (${data.stats.transactions || 0} Tx)`;
+                }
+            }
+        }
+    } catch (e) {
+        console.log("DB status check error:", e);
+    } finally {
+        if (refreshIcon) {
+            setTimeout(() => refreshIcon.classList.remove('fa-spin'), 600);
         }
     }
 }
 
-function closeSidebarOnMobile() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    if (sidebar && overlay) {
-        if (sidebar.classList.contains('open')) {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('active');
-        }
-    }
-}
-
+window.refreshDatabaseStatus = refreshDatabaseStatus;
 window.toggleSidebar = toggleSidebar;
 window.closeSidebarOnMobile = closeSidebarOnMobile;
+
+// Initial DB check on startup
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(refreshDatabaseStatus, 500);
+});

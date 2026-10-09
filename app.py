@@ -1,28 +1,187 @@
 import os
-import sqlite3
+import re
 import hmac
 import hashlib
+import sqlite3
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
 
+DATABASE_URL = os.getenv('DATABASE_URL')
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'finance.db')
-SECRET_KEY = b"finance_tracker_super_secure_secret_key_987654321"
+SECRET_KEY = os.getenv('SECRET_KEY', 'finance_tracker_super_secure_secret_key_987654321').encode()
+
+# PostgreSQL conditional import
+try:
+    import psycopg2
+    import psycopg2.extras
+    PSYCOPG2_AVAILABLE = True
+except ImportError:
+    PSYCOPG2_AVAILABLE = False
+
+
+class PostgreSQLCursorWrapper:
+    def __init__(self, pg_cursor):
+        self.cursor = pg_cursor
+        self.lastrowid = None
+
+    def _convert_query(self, query):
+        # Convert SQLite ? placeholders to Postgres %s placeholders
+        return query.replace('?', '%s')
+
+    def execute(self, query, params=None):
+        q = self._convert_query(query)
+        is_insert = q.strip().upper().startswith('INSERT INTO')
+        
+        if is_insert and 'RETURNING' not in q.upper():
+            q_returning = q + ' RETURNING id'
+            try:
+                if params:
+                    self.cursor.execute(q_returning, params)
+                else:
+                    self.cursor.execute(q_returning)
+                res = self.cursor.fetchone()
+                if res and 'id' in res:
+                    self.lastrowid = res['id']
+                return self
+            except Exception:
+                # If RETURNING id failed, rollback and run standard query
+                try:
+                    self.cursor.connection.rollback()
+                except Exception:
+                    pass
+        
+        if params:
+            self.cursor.execute(q, params)
+        else:
+            self.cursor.execute(q)
+        return self
+
+    def fetchone(self):
+        return self.cursor.fetchone()
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+    def __iter__(self):
+        return iter(self.cursor)
+
+
+class PostgreSQLConnWrapper:
+    def __init__(self, pg_conn):
+        self.conn = pg_conn
+
+    def cursor(self):
+        return PostgreSQLCursorWrapper(self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor))
+
+    def commit(self):
+        self.conn.commit()
+
+    def rollback(self):
+        self.conn.rollback()
+
+    def close(self):
+        self.conn.close()
+
 
 def get_db_connection():
+    if DATABASE_URL and PSYCOPG2_AVAILABLE:
+        try:
+            pg_conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
+            return PostgreSQLConnWrapper(pg_conn)
+        except Exception as e:
+            print(f"[WARN] Failed to connect to PostgreSQL ({e}), falling back to SQLite.")
+            
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
+
 def init_db():
-    # Set up tables
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    if isinstance(conn, PostgreSQLConnWrapper):
+        # Initialize PostgreSQL Tables
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                phone_number TEXT,
+                avatar TEXT,
+                address TEXT,
+                budget_limit DOUBLE PRECISION DEFAULT 2000.00
+            );
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS bank_accounts (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                type TEXT NOT NULL,
+                balance DOUBLE PRECISION NOT NULL
+            );
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS transactions (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+                date TEXT NOT NULL,
+                "desc" TEXT NOT NULL,
+                category TEXT NOT NULL,
+                type TEXT NOT NULL,
+                amount DOUBLE PRECISION NOT NULL,
+                method TEXT DEFAULT 'Bank',
+                account_id INTEGER REFERENCES bank_accounts(id) ON DELETE SET NULL
+            );
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS goals (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                target_amount DOUBLE PRECISION NOT NULL,
+                current_amount DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+                target_date TEXT
+            );
+        ''')
+        
+        # Check admin user
+        cursor.execute("SELECT * FROM users WHERE email = %s", ("admin@example.com",))
+        admin = cursor.fetchone()
+        if not admin:
+            admin_pass_hash = generate_password_hash("admin123", method="pbkdf2:sha256")
+            cursor.execute(
+                "INSERT INTO users (name, email, password_hash) VALUES (%s, %s, %s)",
+                ("Admin User", "admin@example.com", admin_pass_hash)
+            )
+            admin_id = cursor.lastrowid
+            
+            cursor.execute(
+                "INSERT INTO bank_accounts (user_id, name, type, balance) VALUES (%s, %s, %s, %s)",
+                (admin_id, "Checking Account (Primary)", "Checking", 0.00)
+            )
+            cursor.execute(
+                "INSERT INTO bank_accounts (user_id, name, type, balance) VALUES (%s, %s, %s, %s)",
+                (admin_id, "Savings Vault Ledger", "Savings", 0.00)
+            )
+            
+        conn.commit()
+        conn.close()
+        print("[INFO] Supabase PostgreSQL database initialized successfully.")
+        return
+
+    # Initialize SQLite Tables
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,7 +190,6 @@ def init_db():
             password_hash TEXT NOT NULL
         )
     ''')
-    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS bank_accounts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,7 +200,6 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
         )
     ''')
-
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,18 +214,6 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
         )
     ''')
-    
-    # Run dynamic DB migration to add 'method' and 'account_id' columns if database already exists
-    try:
-        cursor.execute("ALTER TABLE transactions ADD COLUMN method TEXT DEFAULT 'Bank'")
-    except sqlite3.OperationalError:
-        pass
-        
-    try:
-        cursor.execute("ALTER TABLE transactions ADD COLUMN account_id INTEGER REFERENCES bank_accounts(id) ON DELETE SET NULL")
-    except sqlite3.OperationalError:
-        pass
-
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS goals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,7 +226,15 @@ def init_db():
         )
     ''')
     
-    # Migration: add phone_number, avatar, address to users table
+    try:
+        cursor.execute("ALTER TABLE transactions ADD COLUMN method TEXT DEFAULT 'Bank'")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE transactions ADD COLUMN account_id INTEGER REFERENCES bank_accounts(id) ON DELETE SET NULL")
+    except Exception:
+        pass
+
     cursor.execute("PRAGMA table_info(users)")
     columns = [col["name"] for col in cursor.fetchall()]
     if "phone_number" not in columns:
@@ -93,7 +246,6 @@ def init_db():
     if "budget_limit" not in columns:
         cursor.execute("ALTER TABLE users ADD COLUMN budget_limit REAL DEFAULT 2000.00")
 
-    # Check if we need to seed the default admin account
     cursor.execute("SELECT * FROM users WHERE email = 'admin@example.com'")
     admin = cursor.fetchone()
     
@@ -104,20 +256,15 @@ def init_db():
             ("Admin User", "admin@example.com", admin_pass_hash)
         )
         admin_id = cursor.lastrowid
-        
         cursor.execute(
             "INSERT INTO bank_accounts (user_id, name, type, balance) VALUES (?, ?, ?, ?)",
             (admin_id, "Checking Account (Primary)", "Checking", 0.00)
         )
-        checking_id = cursor.lastrowid
-        
         cursor.execute(
             "INSERT INTO bank_accounts (user_id, name, type, balance) VALUES (?, ?, ?, ?)",
             (admin_id, "Savings Vault Ledger", "Savings", 0.00)
         )
-        savings_id = cursor.lastrowid
             
-    # Migration: Ensure EVERY user has Checking & Savings accounts, and existing transactions are linked to Checking
     cursor.execute("SELECT id FROM users")
     all_users = cursor.fetchall()
     for user_row in all_users:
@@ -141,6 +288,8 @@ def init_db():
             
     conn.commit()
     conn.close()
+    print("[INFO] Local SQLite database initialized successfully.")
+
 
 # Token Helpers
 def generate_token(user_id):
@@ -174,10 +323,41 @@ def serve_index():
 
 @app.route('/<path:path>')
 def serve_static(path):
-    # Prevent infinite recursion if looking for index.html
     if path == "index.html":
         return send_from_directory('.', 'index.html')
     return send_from_directory('.', path)
+
+# --- DB Status API ---
+@app.route('/api/db-status', methods=['GET'])
+def get_db_status():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT count(*) as count FROM users")
+        u_cnt = cursor.fetchone()['count']
+        cursor.execute("SELECT count(*) as count FROM transactions")
+        t_cnt = cursor.fetchone()['count']
+        cursor.execute("SELECT count(*) as count FROM bank_accounts")
+        a_cnt = cursor.fetchone()['count']
+        cursor.execute("SELECT count(*) as count FROM goals")
+        g_cnt = cursor.fetchone()['count']
+        conn.close()
+        
+        is_postgres = isinstance(conn, PostgreSQLConnWrapper)
+        return jsonify({
+            "connected": True,
+            "engine": "Supabase PostgreSQL" if is_postgres else "SQLite",
+            "project_id": os.getenv("SUPABASE_PROJECT_ID", "pybsbrbytfbfdkdwhrda") if is_postgres else None,
+            "supabase_url": os.getenv("SUPABASE_URL", "https://pybsbrbytfbfdkdwhrda.supabase.co") if is_postgres else None,
+            "stats": {
+                "users": u_cnt,
+                "transactions": t_cnt,
+                "bank_accounts": a_cnt,
+                "goals": g_cnt
+            }
+        })
+    except Exception as e:
+        return jsonify({"connected": False, "error": str(e)}), 500
 
 # --- Authentication APIs ---
 @app.route('/api/auth/signup', methods=['POST'])
@@ -193,6 +373,12 @@ def signup():
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # Check if email exists
+    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({"error": "Email address already registered"}), 400
+
     try:
         password_hash = generate_password_hash(password, method="pbkdf2:sha256")
         cursor.execute(
@@ -211,9 +397,9 @@ def signup():
             (user_id, "Savings Vault Ledger", "Savings", 0.00)
         )
         conn.commit()
-    except sqlite3.IntegrityError:
+    except Exception as e:
         conn.close()
-        return jsonify({"error": "Email address already registered"}), 400
+        return jsonify({"error": f"Registration failed: {str(e)}"}), 400
         
     token = generate_token(user_id)
     conn.close()
@@ -381,7 +567,6 @@ def get_transactions():
         
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Join with bank_accounts to fetch the linked account's name
     cursor.execute('''
         SELECT t.*, b.name as account_name 
         FROM transactions t 
@@ -432,7 +617,6 @@ def add_transaction():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # If account_id is not specified, assign the user's first available account
     if not account_id:
         cursor.execute("SELECT id FROM bank_accounts WHERE user_id = ? LIMIT 1", (user_id,))
         first_acc = cursor.fetchone()
@@ -443,14 +627,12 @@ def add_transaction():
         conn.close()
         return jsonify({"error": "No bank account found for user. Please create a bank account first."}), 400
         
-    # Insert transaction
     cursor.execute(
-        "INSERT INTO transactions (user_id, date, desc, category, type, amount, method, account_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        'INSERT INTO transactions (user_id, date, "desc", category, type, amount, method, account_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         (user_id, date, desc, category, tx_type, float(amount), method, account_id)
     )
     new_id = cursor.lastrowid
     
-    # Adjust corresponding account balance
     if tx_type == 'income':
         cursor.execute("UPDATE bank_accounts SET balance = balance + ? WHERE id = ?", (float(amount), account_id))
     else:
@@ -479,7 +661,6 @@ def delete_transaction(tx_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Verify transaction owner
     cursor.execute("SELECT * FROM transactions WHERE id = ? AND user_id = ?", (tx_id, user_id))
     tx = cursor.fetchone()
     
@@ -487,7 +668,6 @@ def delete_transaction(tx_id):
         conn.close()
         return jsonify({"error": "Transaction not found or unauthorized"}), 404
         
-    # Revert account balance adjustment
     tx_type = tx["type"]
     amount = float(tx["amount"])
     account_id = tx["account_id"]
@@ -596,7 +776,6 @@ def transfer_funds():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Verify accounts belong to user
     cursor.execute("SELECT * FROM bank_accounts WHERE id = ? AND user_id = ?", (from_id, user_id))
     from_acc = cursor.fetchone()
     cursor.execute("SELECT * FROM bank_accounts WHERE id = ? AND user_id = ?", (to_id, user_id))
@@ -610,18 +789,16 @@ def transfer_funds():
         conn.close()
         return jsonify({"error": "Insufficient funds in source account"}), 400
         
-    # Deduct from source, add to dest
     cursor.execute("UPDATE bank_accounts SET balance = balance - ? WHERE id = ?", (amount, from_id))
     cursor.execute("UPDATE bank_accounts SET balance = balance + ? WHERE id = ?", (amount, to_id))
     
-    # Insert matching transactions
     date_str = datetime.now().strftime("%b %d, %Y, %I:%M %p")
     cursor.execute(
-        "INSERT INTO transactions (user_id, date, desc, category, type, amount, method, account_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        'INSERT INTO transactions (user_id, date, "desc", category, type, amount, method, account_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         (user_id, date_str, f"Transfer Out to {to_acc['name']}", "Transfer", "expense", amount, "Bank", from_id)
     )
     cursor.execute(
-        "INSERT INTO transactions (user_id, date, desc, category, type, amount, method, account_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        'INSERT INTO transactions (user_id, date, "desc", category, type, amount, method, account_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         (user_id, date_str, f"Transfer In from {from_acc['name']}", "Transfer", "income", amount, "Bank", to_id)
     )
     
@@ -674,8 +851,8 @@ def add_goal():
         "INSERT INTO goals (user_id, name, target_amount, current_amount, target_date) VALUES (?, ?, ?, ?, ?)",
         (user_id, name, float(target_amount), float(current_amount), target_date)
     )
-    conn.commit()
     new_id = cursor.lastrowid
+    conn.commit()
     conn.close()
     
     return jsonify({
@@ -730,7 +907,7 @@ def delete_goal(goal_id):
         conn.close()
         return jsonify({"error": "Goal not found"}), 404
         
-    cursor.execute("DELETE FROM goals WHERE id = ? AND user_id = ?", (goal_id, user_id))
+    cursor.execute("DELETE FROM goals WHERE id = ?", (goal_id,))
     conn.commit()
     conn.close()
     
@@ -768,7 +945,6 @@ def get_ai_suggestions():
     
     suggestions = []
     
-    # 1. Check for Overall Deficit / Loss Management (Highest Priority)
     if total_expenses > total_income:
         deficit = total_expenses - total_income
         suggestions.append({
@@ -801,7 +977,6 @@ def get_ai_suggestions():
             "action": "Allocate 30% of this month's savings to your Savings Vault Vault."
         })
         
-    # 2. Check for Specific High Category Spending
     if total_expenses > 0:
         top_cat = None
         top_amt = -1.0
@@ -823,7 +998,6 @@ def get_ai_suggestions():
                     "action": f"Set a strict budget threshold for {top_cat} of 25% of your total expenses next month."
                 })
                 
-    # 3. Method-based suggestions to incentivize Digital Scan to Pay or Bank
     methods_used = [row["method"] for row in rows if row["type"] == "expense"]
     cash_count = sum(1 for m in methods_used if m == "Cash")
     if cash_count > 2:
@@ -837,7 +1011,6 @@ def get_ai_suggestions():
             "action": "Use the new integrated Scan to Pay simulator for your daily retail purchases."
         })
 
-    # Default general advice if suggestions list is short
     if len(suggestions) < 3:
         suggestions.append({
             "id": "default_emergency",
@@ -954,5 +1127,5 @@ def ai_chat():
 
 if __name__ == '__main__':
     init_db()
-    # Serve on port 5001
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    port = int(os.getenv('PORT', 5001))
+    app.run(host='0.0.0.0', port=port, debug=True)

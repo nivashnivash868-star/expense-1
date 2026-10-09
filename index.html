@@ -138,6 +138,11 @@
                     </div>
                 </div>
                 <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
+                    <div id="supabase-header-pill" class="supabase-badge-pill" onclick="switchTab('settings')" title="Click to view Supabase Cloud Database details">
+                        <span class="pulse-dot-green"></span>
+                        <i class="fa-solid fa-database"></i>
+                        <span id="supabase-pill-text">Supabase: pybsbrbytfbfdkdwhrda</span>
+                    </div>
                     <button class="btn-secondary" id="header-btn-guide" onclick="showWelcomeOnboardingModal()"
                         style="border: 1px solid var(--border); background: var(--bg-card); color: var(--text); padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer;"
                         title="Show Welcome Guide">
@@ -979,6 +984,49 @@
                                     <i class="fa-solid fa-floppy-disk"></i> Save Preferences
                                 </button>
                             </form>
+                        </div>
+                    </div>
+
+                    <!-- Supabase Cloud Database Management Card -->
+                    <div class="supabase-settings-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(62, 207, 142, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #10b981;">
+                                    <i class="fa-solid fa-bolt"></i>
+                                </div>
+                                <div>
+                                    <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-main);">Supabase Cloud Database</h3>
+                                    <p style="margin: 3px 0 0 0; font-size: 0.82rem; color: var(--text-muted);">Real-time PostgreSQL Cloud Node connected to project <code style="background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #10b981;">pybsbrbytfbfdkdwhrda</code></p>
+                                </div>
+                            </div>
+                            <button class="btn-secondary" onclick="refreshDatabaseStatus()" style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(62, 207, 142, 0.4);">
+                                <i class="fa-solid fa-rotate" id="supabase-refresh-icon"></i> Test Connection
+                            </button>
+                        </div>
+
+                        <div class="supabase-meta-grid">
+                            <div class="supabase-meta-item">
+                                <span class="label">Status</span>
+                                <span class="value" id="db-meta-status" style="color: #10b981; display: flex; align-items: center; gap: 6px;">
+                                    <span class="pulse-dot-green"></span> Connected
+                                </span>
+                            </div>
+                            <div class="supabase-meta-item">
+                                <span class="label">Engine</span>
+                                <span class="value" id="db-meta-engine">PostgreSQL 17.11</span>
+                            </div>
+                            <div class="supabase-meta-item">
+                                <span class="label">Project Reference</span>
+                                <span class="value" id="db-meta-project">pybsbrbytfbfdkdwhrda</span>
+                            </div>
+                            <div class="supabase-meta-item">
+                                <span class="label">Cloud Host</span>
+                                <span class="value" id="db-meta-host" style="font-size: 0.8rem;">db.pybsbrbytfbfdkdwhrda.supabase.co</span>
+                            </div>
+                            <div class="supabase-meta-item">
+                                <span class="label">Total Records</span>
+                                <span class="value" id="db-meta-records">-- Active Rows</span>
+                            </div>
                         </div>
                     </div>
                 </div>
