@@ -147,12 +147,24 @@
                         <i class="fa-solid fa-circle-question"></i> Guide
                     </button>
                     <button class="btn-primary hidden" id="header-btn-add-tx" onclick="showTransactionForm()"
-                        style="padding: 10px 16px; border-radius: 14px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600;">
+                        style="padding: 10px 18px; border-radius: var(--radius-pill); font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 700;">
                         <i class="fa-solid fa-plus"></i> Add Transaction
                     </button>
-                    <button class="btn-secondary hidden" id="header-btn-add-account" onclick="showAccountFormModal()"
-                        style="border: 1px solid var(--border); background: var(--bg-card); color: var(--text); padding: 10px 16px; border-radius: 14px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer;">
-                        <i class="fa-solid fa-university"></i> Add Account
+                    <button class="btn-primary hidden" id="header-btn-add-income" onclick="showTransactionForm('income')"
+                        style="padding: 10px 18px; border-radius: var(--radius-pill); font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+                        <i class="fa-solid fa-plus"></i> Add Income
+                    </button>
+                    <button class="btn-primary hidden" id="header-btn-add-expense" onclick="showTransactionForm('expense')"
+                        style="padding: 10px 18px; border-radius: var(--radius-pill); font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+                        <i class="fa-solid fa-plus"></i> Add Expenses
+                    </button>
+                    <button class="btn-primary hidden" id="header-btn-add-account" onclick="showAccountFormModal()"
+                        style="padding: 10px 18px; border-radius: var(--radius-pill); font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 700; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);">
+                        <i class="fa-solid fa-plus"></i> Add Account
+                    </button>
+                    <button class="btn-primary hidden" id="header-btn-add-goal" onclick="showGoalFormModal()"
+                        style="padding: 10px 18px; border-radius: var(--radius-pill); font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+                        <i class="fa-solid fa-plus"></i> Add Goal
                     </button>
                     <button class="btn-header-scan" id="header-btn-scan-pay" onclick="switchTab('scan-pay')">
                         <i class="fa-solid fa-qrcode"></i> Scan to Pay
@@ -169,12 +181,12 @@
                             <input type="text" id="tx-desc" required placeholder="e.g., Shopping, Freelance Pay">
                         </div>
                         <div class="input-group">
-                            <label>Amount (In Default System Base)</label>
+                            <label>Amount (₹ INR)</label>
                             <input type="number" step="0.01" id="tx-amount" required placeholder="0.00">
                         </div>
                         <div class="input-group">
                             <label>Transaction Type</label>
-                            <select id="tx-type">
+                            <select id="tx-type" onchange="handleTxTypeChange()">
                                 <option value="income">Income</option>
                                 <option value="expense">Expense</option>
                             </select>
@@ -225,25 +237,53 @@
                     <form onsubmit="addNewBankAccountModal(event)">
                         <div class="input-group">
                             <label>Account Name</label>
-                            <input type="text" id="modal-acc-name" placeholder="e.g., Chase Checking, Vault Savings"
-                                required>
+                            <input type="text" id="modal-acc-name" placeholder="e.g., Primary Checking, Savings Account" required>
                         </div>
                         <div class="input-group">
                             <label>Account Ledger Type</label>
                             <select id="modal-acc-type">
                                 <option value="Checking">Checking Account</option>
-                                <option value="Savings">Savings Vault</option>
-                                <option value="Credit Card">Credit Card Ledger</option>
-                                <option value="Investment">Investment Portfolio</option>
+                                <option value="Savings">Savings Account</option>
+                                <option value="Wallet">Cash Wallet</option>
+                                <option value="Credit Card">Credit Card</option>
                             </select>
                         </div>
                         <div class="input-group">
-                            <label>Initial Balance (USD Base)</label>
+                            <label>Initial Balance (₹ INR)</label>
                             <input type="number" id="modal-acc-balance" placeholder="0.00" step="0.01" required>
                         </div>
                         <div class="modal-actions">
                             <button type="button" class="btn-secondary" onclick="hideAccountFormModal()">Cancel</button>
                             <button type="submit" class="btn-primary">Register Account</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Goal Form Modal -->
+            <div id="goal-form-modal" class="modal-backdrop hidden">
+                <div class="modal-card">
+                    <h3><i class="fa-solid fa-bullseye text-primary"></i> Set New Savings Goal</h3>
+                    <form onsubmit="addNewGoal(event)">
+                        <div class="input-group">
+                            <label>Goal Name</label>
+                            <input type="text" id="goal-name-input" placeholder="e.g., New Laptop, Vacation Trip" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Target Amount (₹ INR)</label>
+                            <input type="number" id="goal-target-input" placeholder="100000" step="0.01" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Current Saved Amount (₹ INR)</label>
+                            <input type="number" id="goal-current-input" placeholder="0.00" step="0.01" value="0.00">
+                        </div>
+                        <div class="input-group">
+                            <label>Target Date (Optional)</label>
+                            <input type="text" id="goal-date-input" placeholder="e.g., Dec 2026, Jun 2027">
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary" onclick="hideGoalFormModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">Create Goal</button>
                         </div>
                     </form>
                 </div>
@@ -533,20 +573,16 @@
 
                 <!-- Transactions Ledger Panel -->
                 <div id="view-transactions" class="view-panel hidden">
-                    <div class="card" style="margin-bottom: 20px; padding: 1.25rem;">
-                        <div class="toolbar-flex"
-                            style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
-                            <div style="position: relative; flex: 1; min-width: 250px;">
-                                <i class="fa-solid fa-magnifying-glass"
-                                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                                <input type="text" id="tx-search-input"
-                                    placeholder="Search description, category, or account..."
-                                    oninput="handleTxSearchAndFilter()"
-                                    style="width: 100%; padding: 10px 12px 10px 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main); font-size: 0.9rem;">
+                    <!-- Filter Toolbar Clay Card -->
+                    <div class="clay-card" style="margin-bottom: 20px; padding: 16px 20px;">
+                        <div class="toolbar-flex" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+                            <div style="position: relative; flex: 1; min-width: 240px;">
+                                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                                <input type="text" id="tx-search-input" placeholder="Search transactions..." oninput="handleTxSearchAndFilter()"
+                                    style="width: 100%; padding: 10px 14px 10px 38px; border-radius: var(--radius-pill); border: 1.5px solid var(--glass-border); background: var(--glass-bg); color: var(--text-main); font-size: 0.9rem; font-weight: 500; outline: none; box-shadow: var(--shadow-soft);">
                             </div>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <select id="tx-filter-category" onchange="handleTxSearchAndFilter()"
-                                    style="padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main); font-size: 0.9rem; font-weight: 500;">
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                                <select id="tx-filter-category" onchange="handleTxSearchAndFilter()" class="clay-select-pill">
                                     <option value="all">All Categories</option>
                                     <option value="Salary">Salary</option>
                                     <option value="Freelance">Freelance</option>
@@ -555,113 +591,167 @@
                                     <option value="Utilities">Utilities</option>
                                     <option value="Shopping">Shopping</option>
                                     <option value="Entertainment">Entertainment</option>
+                                    <option value="Others">Others</option>
                                 </select>
-                                <select id="tx-filter-method" onchange="handleTxSearchAndFilter()"
-                                    style="padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main); font-size: 0.9rem; font-weight: 500;">
-                                    <option value="all">All Methods</option>
+                                <select id="tx-filter-method" onchange="handleTxSearchAndFilter()" class="clay-select-pill">
+                                    <option value="all">All Accounts</option>
                                     <option value="Bank">Bank Transfer</option>
                                     <option value="Scan to Pay">Scan to Pay</option>
                                     <option value="Cash">Cash</option>
                                     <option value="Credit Card">Credit Card</option>
                                 </select>
-                                <button class="btn-secondary" onclick="resetTxFilters()"
-                                    style="padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main);">
-                                    <i class="fa-solid fa-filter-circle-xmark"></i> Reset
+                                <div class="date-filter-pill">
+                                    <i class="fa-regular fa-calendar" style="color: var(--primary);"></i>
+                                    <span id="tx-date-range-label">Oct 1, 2026 - Oct 31, 2026</span>
+                                </div>
+                                <button class="btn-primary" onclick="showTransactionForm()" style="border-radius: var(--radius-pill); padding: 9px 18px; font-size: 0.88rem;">
+                                    <i class="fa-solid fa-plus"></i> Add Transaction
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div id="debug-tx-info"
-                            style="font-size:0.8rem; color:var(--text-muted); padding:10px; border-bottom:1px solid var(--border); font-family:monospace; background:rgba(0,0,0,0.02); word-break: break-all; white-space: normal; overflow-wrap: anywhere;">
-                        </div>
+                    <!-- Clay Card Table -->
+                    <div class="clay-card" style="padding: 0; overflow: hidden;">
                         <div class="data-table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th style="cursor: pointer; user-select: none;" onclick="toggleTxSort('date')"
-                                            title="Click to sort by date">
-                                            Date <span id="sort-icon-date"
-                                                style="font-size:0.75rem; margin-left:3px; color:var(--primary);">▼</span>
-                                        </th>
-                                        <th>Description / Account</th>
-                                        <th>Category</th>
-                                        <th>Type</th>
-                                        <th>Method</th>
-                                        <th style="cursor: pointer; user-select: none;" onclick="toggleTxSort('amount')"
-                                            title="Click to sort by amount">
-                                            Amount <span id="sort-icon-amount"
-                                                style="font-size:0.75rem; margin-left:3px; color:var(--text-muted);">↕</span>
-                                        </th>
-                                        <th>Actions</th>
+                                        <th style="cursor: pointer; user-select: none;" onclick="toggleTxSort('date')">DATE <span id="sort-icon-date">▼</span></th>
+                                        <th>DESCRIPTION</th>
+                                        <th>CATEGORY</th>
+                                        <th>ACCOUNT</th>
+                                        <th style="cursor: pointer; user-select: none;" onclick="toggleTxSort('amount')">AMOUNT <span id="sort-icon-amount">↕</span></th>
+                                        <th>TYPE</th>
+                                        <th>ACTIONS</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tx-table-body"></tbody>
                             </table>
+                        </div>
+                        <!-- Pagination Pill Footer -->
+                        <div class="table-pagination-bar">
+                            <button class="page-nav-btn" title="Previous Page"><i class="fa-solid fa-chevron-left"></i></button>
+                            <div class="page-numbers">
+                                <button class="page-num-btn active">1</button>
+                                <button class="page-num-btn">2</button>
+                                <button class="page-num-btn">3</button>
+                                <button class="page-num-btn">4</button>
+                                <button class="page-num-btn">5</button>
+                            </div>
+                            <button class="page-nav-btn" title="Next Page"><i class="fa-solid fa-chevron-right"></i></button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Income Panel -->
                 <div id="view-income" class="view-panel hidden">
-                    <div class="metrics-grid">
-                        <div class="card card-income" style="cursor: default;">
-                            <div class="metric-icon"><i class="fa-solid fa-arrow-down"></i></div>
-                            <div>
-                                <h3>Total Income</h3>
-                                <p class="amount" id="income-sum-total">0.00</p>
+                    <!-- Top 4 Metrics Cards -->
+                    <div class="metrics-grid-4col">
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-income"><i class="fa-solid fa-arrow-down"></i></div>
+                                <span class="pct-pill-badge badge-pct-green">+12%</span>
+                            </div>
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">Total Income</span>
+                                <h3 class="stat-compact-val" id="income-sum-total">₹24,500</h3>
                             </div>
                         </div>
-                        <div class="card" style="border-left: 4px solid var(--primary);">
-                            <div class="metric-icon" style="background: rgba(79, 70, 229, 0.1); color: var(--primary);">
-                                <i class="fa-solid fa-calculator"></i>
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-blue"><i class="fa-regular fa-calendar-check"></i></div>
+                                <span class="pct-pill-badge badge-pct-green">+8%</span>
                             </div>
-                            <div>
-                                <h3>Avg Deposit</h3>
-                                <p class="amount" id="income-avg-deposit">0.00</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid-two-col" style="margin-bottom: 20px;">
-                        <div class="card">
-                            <h3><i class="fa-solid fa-chart-pie text-success"></i> Income Source Contribution</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Percentage
-                                breakdown of your earnings</p>
-                            <div id="income-contribution-bars"
-                                style="display: flex; flex-direction: column; gap: 12px;">
-                                <!-- Progress bars injected here -->
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">This Month</span>
+                                <h3 class="stat-compact-val" id="income-this-month-val">₹24,000</h3>
                             </div>
                         </div>
-                        <div class="card">
-                            <h3><i class="fa-solid fa-circle-info text-primary"></i> Income Insights</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Direct deposit
-                                and earnings tracking</p>
-                            <div style="font-size: 0.9rem; line-height: 1.6; color: var(--text-main);">
-                                <p><i class="fa-solid fa-circle-check text-success"></i> <strong>Steady Inflow:</strong>
-                                    All direct earnings automatically synchronize with linked account ledgers.</p>
-                                <p style="margin-top: 10px;"><i class="fa-solid fa-lightbulb text-warning"></i>
-                                    <strong>Tip:</strong> Create savings goals to move a portion of this income into
-                                    specialized vaults.
-                                </p>
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-purple"><i class="fa-solid fa-calculator"></i></div>
+                            </div>
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">Average Monthly</span>
+                                <h3 class="stat-compact-val" id="income-avg-deposit">₹22,300</h3>
+                            </div>
+                        </div>
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-cyan"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                            </div>
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">Total Entries</span>
+                                <h3 class="stat-compact-val" id="income-total-entries">3</h3>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <h3 style="margin-bottom:15px;">Income Streams Ledger</h3>
+                    <!-- Main 2-Column Trend & Donut Grid -->
+                    <div class="dashboard-grid-2col" style="margin-bottom: 22px;">
+                        <!-- Left: Income Trend Rounded Blue Bars -->
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-blue" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-arrow-trend-up"></i>
+                                    </div>
+                                    <h3>Income Trend</h3>
+                                </div>
+                                <div class="clay-select-pill-sm">
+                                    <span>Monthly</span> <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem;"></i>
+                                </div>
+                            </div>
+                            <div class="bar-chart-visual-container" id="income-bar-chart-container">
+                                <!-- Visual Bar Chart rendered via SVG/DOM -->
+                            </div>
+                        </div>
+
+                        <!-- Right: Income Sources Donut Chart -->
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-income" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-chart-pie"></i>
+                                    </div>
+                                    <h3>Income Sources</h3>
+                                </div>
+                            </div>
+                            <div class="donut-chart-flex-container">
+                                <div class="donut-visual-box">
+                                    <div class="donut-center-circle" id="income-donut-center">
+                                        <span class="donut-center-amount" id="income-donut-amount">₹24,500</span>
+                                        <span class="donut-center-sub">Total Income</span>
+                                    </div>
+                                    <svg class="donut-svg" viewBox="0 0 160 160" id="income-donut-svg"></svg>
+                                </div>
+                                <div class="donut-legend-column" id="income-donut-legend">
+                                    <!-- Dynamic Legend -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Income Entries Table -->
+                    <div class="clay-card" style="padding: 0; overflow: hidden;">
+                        <div style="padding: 18px 22px; border-bottom: 1.5px solid var(--glass-border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: 1.05rem; font-weight: 800; margin: 0;">Income Streams Ledger</h3>
+                            <button class="btn-primary" onclick="showTransactionForm('income')" style="border-radius: var(--radius-pill); padding: 7px 16px; font-size: 0.85rem;">
+                                <i class="fa-solid fa-plus"></i> Add Income
+                            </button>
+                        </div>
                         <div class="data-table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Income Source</th>
-                                        <th>Category</th>
-                                        <th>Deposited To</th>
-                                        <th>Method</th>
-                                        <th>Amount</th>
-                                        <th>Actions</th>
+                                        <th>DATE</th>
+                                        <th>INCOME SOURCE</th>
+                                        <th>CATEGORY</th>
+                                        <th>DEPOSITED TO</th>
+                                        <th>METHOD</th>
+                                        <th>AMOUNT</th>
+                                        <th>ACTIONS</th>
                                     </tr>
                                 </thead>
                                 <tbody id="income-table-body"></tbody>
@@ -672,67 +762,111 @@
 
                 <!-- Expenses Panel -->
                 <div id="view-expenses" class="view-panel hidden">
-                    <div class="metrics-grid">
-                        <div class="card card-expense" style="cursor: default;">
-                            <div class="metric-icon"><i class="fa-solid fa-arrow-up"></i></div>
-                            <div>
-                                <h3>Total Spent</h3>
-                                <p class="amount" id="expense-sum-total">0.00</p>
+                    <!-- Top 4 Metrics Cards -->
+                    <div class="metrics-grid-4col">
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-expense"><i class="fa-solid fa-arrow-up"></i></div>
+                                <span class="pct-pill-badge badge-pct-red">+8%</span>
+                            </div>
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">Total Expenses</span>
+                                <h3 class="stat-compact-val" id="expense-sum-total">₹18,200</h3>
                             </div>
                         </div>
-                        <div class="card" style="border-left: 4px solid var(--warning);">
-                            <div class="metric-icon"
-                                style="background: rgba(245, 158, 11, 0.1); color: var(--warning);"><i
-                                    class="fa-solid fa-chart-line"></i></div>
-                            <div>
-                                <h3>Remaining Budget</h3>
-                                <p class="amount" id="expense-remaining-budget">0.00</p>
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-expense"><i class="fa-regular fa-calendar-xmark"></i></div>
+                            </div>
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">This Month</span>
+                                <h3 class="stat-compact-val" id="expense-this-month-val">₹18,200</h3>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="grid-two-col" style="margin-bottom: 20px;">
-                        <div class="card">
-                            <h3><i class="fa-solid fa-fire text-danger"></i> Budget Burn Rate</h3>
-                            <p id="expense-budget-label"
-                                style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">$0.00 spent
-                                of $2,000.00 budget limit</p>
-                            <div class="progress-container" style="height: 24px; border-radius: 8px; margin: 0;">
-                                <div id="expense-budget-progress-bar" class="progress-bar bar-success"
-                                    style="width: 0%; font-size: 0.85rem; font-weight: bold; transition: width 0.4s ease;">
-                                    0% Used</div>
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-purple"><i class="fa-solid fa-calculator"></i></div>
+                            </div>
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">Average Monthly</span>
+                                <h3 class="stat-compact-val" id="expense-avg-monthly">₹16,500</h3>
                             </div>
                         </div>
-                        <div class="card">
-                            <h3><i class="fa-solid fa-shield-halved text-warning"></i> Spending Monitor</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Monthly
-                                spending risk level</p>
-                            <div style="font-size: 0.9rem; line-height: 1.6; color: var(--text-main);">
-                                <p id="expense-burn-warning-text"><i class="fa-solid fa-circle-check text-success"></i>
-                                    <strong>Safe Zone:</strong> Your spending speed is well within safe limits for this
-                                    month.
-                                </p>
-                                <p style="margin-top: 10px;"><i class="fa-solid fa-qrcode text-warning"></i>
-                                    <strong>Tip:</strong> Pay using QR Scanner inside the app to automatically track and
-                                    tag utility bills.
-                                </p>
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-cyan"><i class="fa-solid fa-receipt"></i></div>
+                            </div>
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">Total Entries</span>
+                                <h3 class="stat-compact-val" id="expense-total-entries">12</h3>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <h3 style="margin-bottom:15px;">Expenses Ledger</h3>
+                    <!-- Main 2-Column Trend & Donut Grid -->
+                    <div class="dashboard-grid-2col" style="margin-bottom: 22px;">
+                        <!-- Left: Expense Trend Rounded Coral Bars -->
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-expense" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-arrow-trend-down"></i>
+                                    </div>
+                                    <h3>Expense Trend</h3>
+                                </div>
+                                <div class="clay-select-pill-sm">
+                                    <span>Monthly</span> <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem;"></i>
+                                </div>
+                            </div>
+                            <div class="bar-chart-visual-container" id="expense-bar-chart-container">
+                                <!-- Visual Bar Chart rendered via SVG/DOM -->
+                            </div>
+                        </div>
+
+                        <!-- Right: Expenses by Category Donut Chart -->
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-expense" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-chart-pie"></i>
+                                    </div>
+                                    <h3>Expenses by Category</h3>
+                                </div>
+                            </div>
+                            <div class="donut-chart-flex-container">
+                                <div class="donut-visual-box">
+                                    <div class="donut-center-circle" id="expense-donut-center">
+                                        <span class="donut-center-amount" id="expense-donut-amount">₹18,200</span>
+                                        <span class="donut-center-sub">This Month</span>
+                                    </div>
+                                    <svg class="donut-svg" viewBox="0 0 160 160" id="expense-donut-svg"></svg>
+                                </div>
+                                <div class="donut-legend-column" id="expense-donut-legend">
+                                    <!-- Dynamic Legend -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expenses Entries Table -->
+                    <div class="clay-card" style="padding: 0; overflow: hidden;">
+                        <div style="padding: 18px 22px; border-bottom: 1.5px solid var(--glass-border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: 1.05rem; font-weight: 800; margin: 0;">Expenses Ledger</h3>
+                            <button class="btn-primary" onclick="showTransactionForm('expense')" style="border-radius: var(--radius-pill); padding: 7px 16px; font-size: 0.85rem;">
+                                <i class="fa-solid fa-plus"></i> Add Expenses
+                            </button>
+                        </div>
                         <div class="data-table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Merchant / Details</th>
-                                        <th>Category</th>
-                                        <th>Paid From</th>
-                                        <th>Method</th>
-                                        <th>Amount</th>
-                                        <th>Actions</th>
+                                        <th>DATE</th>
+                                        <th>MERCHANT / DETAILS</th>
+                                        <th>CATEGORY</th>
+                                        <th>PAID FROM</th>
+                                        <th>METHOD</th>
+                                        <th>AMOUNT</th>
+                                        <th>ACTIONS</th>
                                     </tr>
                                 </thead>
                                 <tbody id="expense-table-body"></tbody>
@@ -741,305 +875,229 @@
                     </div>
                 </div>
 
-
-
+                <!-- Accounts Panel -->
                 <div id="view-accounts" class="view-panel hidden">
-                    <div class="accounts-dashboard-flex">
-                        <div class="accounts-header-row" style="margin-bottom: 20px;">
-                            <h3>Your Registered Accounts</h3>
-                            <p style="color: var(--text-muted); font-size: 0.9rem;">Balances synchronize automatically
-                                as you create or delete transactions.</p>
-                        </div>
-
-                        <div id="accounts-cards-grid" class="grid-three-col" style="margin-bottom: 30px;">
-                            <!-- Dynamically loaded bank account cards -->
-                        </div>
-
-                        <div class="grid-two-col">
-                            <!-- Add Account Card -->
-                            <div class="card">
-                                <h3><i class="fa-solid fa-plus-circle text-primary"></i> Add Account Ledger</h3>
-                                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Register
-                                    checking, savings, card, or asset balances.</p>
-                                <form onsubmit="addNewBankAccount(event)">
-                                    <div class="input-group">
-                                        <label>Account Name</label>
-                                        <input type="text" id="acc-name-input"
-                                            placeholder="e.g., Chase Checking, Vault Savings" required>
-                                    </div>
-                                    <div class="input-group">
-                                        <label>Account Ledger Type</label>
-                                        <select id="acc-type-input">
-                                            <option value="Checking">Checking Account</option>
-                                            <option value="Savings">Savings Vault</option>
-                                            <option value="Credit Card">Credit Card Ledger</option>
-                                            <option value="Investment">Investment Portfolio</option>
-                                        </select>
-                                    </div>
-                                    <div class="input-group">
-                                        <label>Initial Balance (USD Base)</label>
-                                        <input type="number" id="acc-bal-input" placeholder="0.00" step="0.01" required>
-                                    </div>
-                                    <button type="submit" class="btn-primary btn-full-width"
-                                        style="padding: 10px; font-weight: bold; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 6px;">
-                                        <i class="fa-solid fa-circle-check"></i> Register Account
-                                    </button>
-                                </form>
-                            </div>
-
-                            <!-- Transfer Funds Card -->
-                            <div class="card">
-                                <h3><i class="fa-solid fa-money-bill-transfer text-warning"></i> Internal Funds Transfer
-                                </h3>
-                                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Debit one
-                                    account to credit another instantly.</p>
-                                <form onsubmit="executeInternalTransfer(event)">
-                                    <div class="input-group">
-                                        <label>Source Account (Debit)</label>
-                                        <select id="transfer-from-select" required>
-                                            <!-- Dynamically loaded accounts -->
-                                        </select>
-                                    </div>
-                                    <div class="input-group">
-                                        <label>Destination Account (Credit)</label>
-                                        <select id="transfer-to-select" required>
-                                            <!-- Dynamically loaded accounts -->
-                                        </select>
-                                    </div>
-                                    <div class="input-group">
-                                        <label>Transfer Amount (USD Base)</label>
-                                        <input type="number" id="transfer-amt-input" placeholder="0.00" step="0.01"
-                                            required>
-                                    </div>
-                                    <button type="submit" class="btn-primary btn-full-width"
-                                        style="padding: 10px; font-weight: bold; margin-top: 10px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; display: flex; justify-content: center; align-items: center; gap: 6px;">
-                                        <i class="fa-solid fa-bolt"></i> Authorize Transfer
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="view-reports" class="view-panel hidden">
-                    <div class="grid-two-col">
-                        <!-- Left Column: Conic Chart -->
-                        <div class="card text-center"
-                            style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                            <h3><i class="fa-solid fa-chart-pie text-primary"></i> Expense Distribution</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Visual
-                                breakdown of monthly expenses</p>
-                            <div id="reports-conic-chart"
-                                style="width: 200px; height: 200px; border-radius: 50%; margin: 20px auto; box-shadow: var(--shadow-md); transition: background 0.3s ease;">
-                            </div>
-                            <div id="reports-legend"
-                                style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 15px;">
-                                <!-- Dynamically loaded legend badges -->
-                            </div>
-                        </div>
-
-                        <!-- Right Column: Category Budgets Performance -->
-                        <div class="card">
-                            <h3><i class="fa-solid fa-list-check text-success"></i> Category Budget Limits & Performance
-                            </h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Customize and
-                                track monthly limits per category group</p>
-                            <form onsubmit="saveCategoryBudgets(event)"
-                                style="display: flex; flex-direction: column; gap: 15px; margin: 0;">
-                                <div id="reports-budget-list"
-                                    style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 10px;">
-                                    <!-- Dynamically loaded budgets progress bars with inputs -->
-                                </div>
-                                <button type="submit" class="btn-primary btn-full-width"
-                                    style="padding: 10px; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 6px; border-radius: 8px;">
-                                    <i class="fa-solid fa-floppy-disk"></i> Save Category Budgets
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="view-goals" class="view-panel hidden">
-                    <div class="accounts-header-row" style="margin-bottom: 20px;">
-                        <h3>Active Savings Goals & Milestones</h3>
-                        <p style="color: var(--text-muted); font-size: 0.9rem;">Set financial targets and track your
-                            savings progress.</p>
+                    <!-- 4 Bank Cards Grid -->
+                    <div class="accounts-grid-4col" id="accounts-cards-grid">
+                        <!-- Dynamically rendered 3D Bank Cards -->
                     </div>
 
-                    <!-- Goals Summary Stats Panel -->
-                    <div class="card"
-                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 1.5rem;">
-                        <div style="display: flex; gap: 40px; align-items: center;">
-                            <div>
-                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Overall
-                                    Target Savings</span>
-                                <h2 id="goals-total-target-val"
-                                    style="font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-top: 4px;">
-                                    $0.00</h2>
-                            </div>
-                            <div style="border-left: 1px solid var(--border); height: 40px;"></div>
-                            <div>
-                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Total
-                                    Saved Milestones</span>
-                                <h2 id="goals-total-saved-val"
-                                    style="font-size: 1.8rem; font-weight: 800; color: var(--success); margin-top: 4px;">
-                                    $0.00</h2>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <span
-                                style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-align: right;">Overall
-                                Progress</span>
-                            <div id="goals-progress-circle"
-                                style="width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: conic-gradient(var(--primary) 0%, var(--border) 0%); transition: background 0.3s ease; box-shadow: var(--shadow-sm);">
-                                <div id="goals-overall-pct"
-                                    style="width: 43px; height: 43px; border-radius: 50%; background: var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: var(--text-main);">
-                                    0%</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid-two-col">
-                        <!-- Left Column: Goals list -->
-                        <div>
-                            <div id="goals-cards-grid" style="display: flex; flex-direction: column; gap: 20px;">
-                                <!-- Dynamically loaded goals -->
-                            </div>
-                        </div>
-
-                        <!-- Right Column: Add Goal Form -->
-                        <div class="card">
-                            <h3><i class="fa-solid fa-bullseye text-primary"></i> Create Savings Goal</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Define a new
-                                target to set aside savings.</p>
-                            <form onsubmit="addNewGoal(event)">
-                                <div class="input-group">
-                                    <label>Goal Name</label>
-                                    <input type="text" id="goal-name-input" placeholder="e.g., Tech Fund, Tesla Model 3"
-                                        required>
-                                </div>
-                                <div class="input-group">
-                                    <label>Target Amount (USD Base)</label>
-                                    <input type="number" id="goal-target-input" placeholder="5000.00" step="0.01"
-                                        required>
-                                </div>
-                                <div class="input-group">
-                                    <label>Initial Amount (Optional)</label>
-                                    <input type="number" id="goal-current-input" placeholder="0.00" step="0.01"
-                                        value="0.00">
-                                </div>
-                                <div class="input-group">
-                                    <label>Target Date (Optional)</label>
-                                    <input type="date" id="goal-date-input">
-                                </div>
-                                <button type="submit" class="btn-primary btn-full-width"
-                                    style="padding: 10px; font-weight: bold; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-circle-check"></i> Register Goal
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="view-settings" class="view-panel hidden">
-                    <div class="grid-two-col">
-                        <!-- Left: Profile Settings -->
-                        <div class="card">
-                            <h3><i class="fa-solid fa-user-gear text-primary"></i> User Profile Settings</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Manage your
-                                account details and login credentials.</p>
-
-                            <div
-                                style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px; background: rgba(79, 70, 229, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(79, 70, 229, 0.1);">
-                                <div id="settings-profile-avatar" class="avatar"
-                                    style="width: 60px; height: 60px; font-size: 1.5rem;">U</div>
-                                <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <h4 style="font-size: 1.1rem; color: var(--text-main);">Node Vault Details</h4>
-                                    <span style="font-size: 0.75rem; color: var(--text-muted);">Node ID: <strong
-                                            id="settings-vault-node-id"
-                                            style="color: var(--primary);">0x00000000</strong></span>
-                                    <span style="font-size: 0.75rem; color: var(--text-muted);">Last Active: <span
-                                            id="settings-vault-last-login">--</span></span>
-                                </div>
-                            </div>
-
-                            <form onsubmit="updateUserProfile(event)">
-                                <div class="grid-two-col">
-                                    <div class="input-group">
-                                        <label>Full Name</label>
-                                        <input type="text" id="settings-profile-name" required placeholder="Full Name">
+                    <!-- Bottom 2-Column: Add Account & Transfer Funds -->
+                    <div class="dashboard-grid-2col" style="margin-top: 24px;">
+                        <!-- Add Account Card -->
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-blue" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-plus"></i>
                                     </div>
-                                    <div class="input-group">
-                                        <label>Email Address</label>
-                                        <input type="email" id="settings-profile-email" required
-                                            placeholder="Email Address">
-                                    </div>
+                                    <h3>Add Account Ledger</h3>
                                 </div>
-                                <div class="grid-two-col">
-                                    <div class="input-group">
-                                        <label>Phone Number</label>
-                                        <input type="tel" id="settings-profile-phone" placeholder="e.g., +1 555-0199">
-                                    </div>
-                                    <div class="input-group">
-                                        <label>New Password</label>
-                                        <input type="password" id="settings-profile-password"
-                                            placeholder="Leave blank to keep current">
-                                    </div>
+                            </div>
+                            <p class="card-subtitle-desc">Register checking, savings, wallet, or credit card ledgers</p>
+                            <form onsubmit="addNewBankAccount(event)">
+                                <div class="input-group">
+                                    <label>Account Name</label>
+                                    <input type="text" id="acc-name-input" placeholder="e.g., Chase Checking, Vault Savings" required>
                                 </div>
                                 <div class="input-group">
-                                    <label>Avatar Photo URL</label>
-                                    <input type="url" id="settings-profile-photo-url"
-                                        placeholder="https://example.com/avatar.png" oninput="previewSettingsAvatar()">
-                                </div>
-                                <div class="input-group">
-                                    <label>Home/Billing Address</label>
-                                    <input type="text" id="settings-profile-address"
-                                        placeholder="123 Main St, City, Country">
-                                </div>
-                                <button type="submit" class="btn-primary btn-full-width"
-                                    style="padding: 10px; font-weight: bold; margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
-                                </button>
-                            </form>
-                        </div>
-
-                        <!-- Right: System Configurations -->
-                        <div class="card">
-                            <h3><i class="fa-solid fa-sliders text-warning"></i> System Preferences</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Configure your
-                                global app options.</p>
-
-                            <form onsubmit="updateSystemPreferences(event)">
-                                <div class="input-group">
-                                    <label style="color:var(--primary); font-weight:bold;"><i
-                                            class="fa-solid fa-coins"></i>
-                                        System Display Currency</label>
-                                    <select id="currency-toggle-select" onchange="handleCurrencyConversionChange()">
-                                        <option value="USD">USD ($) - US Dollar Base</option>
-                                        <option value="INR">INR (₹) - Indian Rupee Engine</option>
+                                    <label>Account Type</label>
+                                    <select id="acc-type-input">
+                                        <option value="Checking">Checking Account</option>
+                                        <option value="Savings">Savings Account</option>
+                                        <option value="Wallet">Cash Wallet</option>
+                                        <option value="Credit Card">Credit Card</option>
                                     </select>
                                 </div>
-                                <div class="input-group" style="margin-top: 15px;">
-                                    <label style="color:var(--primary); font-weight:bold;"><i
-                                            class="fa-solid fa-hand-holding-dollar"></i>
-                                        Monthly Budget Limit</label>
-                                    <div style="display: flex; gap: 10px; align-items: center;">
-                                        <span id="settings-budget-currency-symbol"
-                                            style="font-weight: bold; font-size: 1.1rem; color: var(--text-main);">₹</span>
-                                        <input type="number" id="settings-budget-limit-input" step="0.01" min="0"
-                                            required placeholder="e.g., 2000" style="flex: 1;">
-                                    </div>
+                                <div class="input-group">
+                                    <label>Initial Balance</label>
+                                    <input type="number" id="acc-bal-input" placeholder="0.00" step="0.01" required>
                                 </div>
-                                <button type="submit" class="btn-primary btn-full-width"
-                                    style="padding: 10px; font-weight: bold; margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-floppy-disk"></i> Save Preferences
+                                <button type="submit" class="btn-primary btn-full-width" style="margin-top: 10px; border-radius: var(--radius-md);">
+                                    <i class="fa-solid fa-circle-check"></i> Register Account
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Transfer Funds Card -->
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-balance" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-money-bill-transfer"></i>
+                                    </div>
+                                    <h3>Internal Funds Transfer</h3>
+                                </div>
+                            </div>
+                            <p class="card-subtitle-desc">Debit one account to credit another instantly</p>
+                            <form onsubmit="executeInternalTransfer(event)">
+                                <div class="input-group">
+                                    <label>Source Account (Debit)</label>
+                                    <select id="transfer-from-select" required></select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Destination Account (Credit)</label>
+                                    <select id="transfer-to-select" required></select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Transfer Amount</label>
+                                    <input type="number" id="transfer-amt-input" placeholder="0.00" step="0.01" required>
+                                </div>
+                                <button type="submit" class="btn-primary btn-full-width" style="margin-top: 10px; border-radius: var(--radius-md); background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);">
+                                    <i class="fa-solid fa-bolt"></i> Authorize Transfer
                                 </button>
                             </form>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Supabase Cloud Database Management Card -->
-                    <div class="supabase-settings-card">
+                <!-- Reports Panel -->
+                <div id="view-reports" class="view-panel hidden">
+                    <!-- Sub-nav Pills Bar -->
+                    <div class="subnav-pill-bar">
+                        <div class="subnav-pills-left">
+                            <button class="subnav-pill-btn active" onclick="switchReportsSubTab('overview')">Overview</button>
+                            <button class="subnav-pill-btn" onclick="switchReportsSubTab('income-vs-expense')">Income vs Expenses</button>
+                            <button class="subnav-pill-btn" onclick="switchReportsSubTab('category')">Category Analysis</button>
+                            <button class="subnav-pill-btn" onclick="switchReportsSubTab('account')">Account Comparison</button>
+                        </div>
+                        <div class="date-filter-pill">
+                            <i class="fa-regular fa-calendar" style="color: var(--primary);"></i>
+                            <span>Oct 1, 2026 - Oct 31, 2026</span>
+                        </div>
+                    </div>
+
+                    <!-- Top 4 Metric Cards -->
+                    <div class="metrics-grid-4col" style="margin-top: 18px;">
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-income"><i class="fa-solid fa-arrow-down"></i></div>
+                            </div>
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">Total Income</span>
+                                <h3 class="stat-compact-val" id="reports-total-income">₹24,500</h3>
+                            </div>
+                        </div>
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-expense"><i class="fa-solid fa-arrow-up"></i></div>
+                            </div>
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">Total Expenses</span>
+                                <h3 class="stat-compact-val" id="reports-total-expense">₹18,200</h3>
+                            </div>
+                        </div>
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-income"><i class="fa-solid fa-wallet"></i></div>
+                            </div>
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">Net Savings</span>
+                                <h3 class="stat-compact-val" id="reports-net-savings" style="color: var(--success);">₹6,300</h3>
+                            </div>
+                        </div>
+                        <div class="clay-card card-stat-compact">
+                            <div class="stat-compact-header">
+                                <div class="icon-badge-3d badge-purple"><i class="fa-solid fa-percent"></i></div>
+                            </div>
+                            <div class="stat-compact-body">
+                                <span class="stat-compact-label">Savings Rate</span>
+                                <h3 class="stat-compact-val" id="reports-savings-rate">25.7%</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main 2-Column: Dual Bar Chart & Top Expense Categories -->
+                    <div class="dashboard-grid-2col" style="margin-top: 22px;">
+                        <!-- Left: Paired Dual Bar Chart -->
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-blue" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-chart-column"></i>
+                                    </div>
+                                    <h3>Income vs Expenses</h3>
+                                </div>
+                                <div style="display: flex; gap: 14px; align-items: center; font-size: 0.8rem; font-weight: 700;">
+                                    <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span> Income</span>
+                                    <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #f43f5e;"></span> Expenses</span>
+                                </div>
+                            </div>
+                            <div class="dual-bar-chart-container" id="reports-dual-bar-chart">
+                                <!-- Paired Bar Chart rendered dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Right: Top Expense Categories Horizontal Bars -->
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-expense" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-bars-progress"></i>
+                                    </div>
+                                    <h3>Top Expense Categories</h3>
+                                </div>
+                            </div>
+                            <div id="reports-top-categories-list" style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
+                                <!-- Dynamically rendered horizontal category progress bars with percentage -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Goals Panel -->
+                <div id="view-goals" class="view-panel hidden">
+                    <!-- 4 Goals Card Grid -->
+                    <div class="goals-grid-4col" id="goals-cards-grid">
+                        <!-- Dynamically rendered 3D Goal Cards -->
+                    </div>
+                </div>
+
+                <!-- Settings Panel -->
+                <div id="view-settings" class="view-panel hidden">
+                    <!-- Sub-nav Tabs -->
+                    <div class="subnav-pill-bar" style="margin-bottom: 22px;">
+                        <div class="subnav-pills-left">
+                            <button class="subnav-pill-btn active" onclick="switchSettingsSubTab('profile')">Profile</button>
+                            <button class="subnav-pill-btn" onclick="switchSettingsSubTab('appearance')">Appearance</button>
+                            <button class="subnav-pill-btn" onclick="switchSettingsSubTab('notifications')">Notifications</button>
+                            <button class="subnav-pill-btn" onclick="switchSettingsSubTab('security')">Security</button>
+                            <button class="subnav-pill-btn" onclick="switchSettingsSubTab('data')">Data & Backup</button>
+                        </div>
+                    </div>
+
+                    <!-- Profile Information Card -->
+                    <div class="clay-card">
+                        <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 20px;">Profile Information</h3>
+                        <form onsubmit="updateUserProfile(event)" class="profile-info-layout">
+                            <div class="profile-avatar-column">
+                                <div class="profile-avatar-large-3d" id="settings-profile-avatar">N</div>
+                                <button type="button" class="btn-change-photo" onclick="promptPhotoUrl()">Change Photo</button>
+                            </div>
+                            <div class="profile-fields-column">
+                                <div class="input-group">
+                                    <label>Full Name</label>
+                                    <input type="text" id="settings-profile-name" required value="nivash">
+                                </div>
+                                <div class="input-group">
+                                    <label>Email</label>
+                                    <input type="email" id="settings-profile-email" required value="nivashnivash868@gmail.com">
+                                </div>
+                                <div class="input-group">
+                                    <label>Phone</label>
+                                    <input type="tel" id="settings-profile-phone" value="+91 9876543210">
+                                </div>
+                                <input type="hidden" id="settings-profile-photo-url">
+                                <input type="hidden" id="settings-profile-address">
+                                <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                                    <button type="submit" class="btn-primary" style="border-radius: var(--radius-md); padding: 10px 24px;">Save Changes</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Supabase Cloud Database Card -->
+                    <div class="supabase-settings-card" style="margin-top: 22px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(62, 207, 142, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #10b981;">
@@ -1082,209 +1140,105 @@
                     </div>
                 </div>
 
+                <!-- AI Advisor Panel -->
                 <div id="view-ai-advisor" class="view-panel hidden">
-                    <div class="ai-advisor-container">
-                        <!-- AI Header Card -->
-                        <div class="card card-ai-header">
-                            <div class="ai-header-content">
-                                <div class="ai-avatar-glow">
-                                    <i class="fa-solid fa-brain ai-brain-pulse"></i>
-                                </div>
-                                <div class="ai-welcome">
-                                    <h2>MyFin AI Financial Advisor</h2>
-                                    <p>Deep analytical insights based on your spending history, transaction channels,
-                                        and budget burn rates.</p>
-                                </div>
-                            </div>
-                            <div class="ai-financial-health">
-                                <span class="health-label">Financial Score</span>
-                                <div class="health-circle-outer">
-                                    <div class="health-score-value" id="ai-health-score">--</div>
+                    <div class="clay-card ai-chat-main-card">
+                        <!-- AI Chat Messages Area -->
+                        <div class="ai-chat-history" id="ai-chat-history-box">
+                            <div class="ai-message-bubble-row">
+                                <div class="ai-avatar-small-3d"><i class="fa-solid fa-brain"></i></div>
+                                <div class="ai-message-speech-bubble">
+                                    <p>Hello! I'm your AI Finance Advisor. I can help you analyze your spending, suggest savings tips, and answer your financial questions.</p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- AI Key Metrics Summary -->
-                        <div class="metrics-grid" style="margin-top: 20px; margin-bottom: 20px;">
-                            <div class="card card-ai-summary">
-                                <div class="metric-title-flex">
-                                    <i class="fa-solid fa-scale-balanced text-primary"></i>
-                                    <h4>Net Monthly Savings</h4>
-                                </div>
-                                <p class="amount" id="ai-savings-value">$0.00</p>
-                                <span class="subtext" id="ai-savings-rate">Savings Rate: --%</span>
-                            </div>
-                            <div class="card card-ai-summary">
-                                <div class="metric-title-flex">
-                                    <i class="fa-solid fa-fire text-danger"></i>
-                                    <h4>Burn Rate Speed</h4>
-                                </div>
-                                <p class="amount" id="ai-burn-value">$0.00</p>
-                                <span class="subtext" id="ai-burn-rate">Burn Ratio: --%</span>
-                            </div>
+                        <!-- Quick Prompt Suggestion Pills -->
+                        <div class="ai-prompt-pills-row">
+                            <button class="ai-prompt-pill" onclick="sendAiPrompt('Analyse my spending')">Analyse my spending</button>
+                            <button class="ai-prompt-pill" onclick="sendAiPrompt('How can I save money?')">How can I save money?</button>
+                            <button class="ai-prompt-pill" onclick="sendAiPrompt('Show monthly summary')">Show monthly summary</button>
+                            <button class="ai-prompt-pill" onclick="sendAiPrompt('Suggest budget plan')">Suggest budget plan</button>
                         </div>
 
-                        <!-- AI Suggestions Cards -->
-                        <div class="card">
-                            <div class="card-title-header">
-                                <i class="fa-solid fa-lightbulb text-warning" style="font-size: 1.5rem;"></i>
-                                <div>
-                                    <h3 style="margin: 0;">Dynamic Advisory Insights</h3>
-                                    <p class="sub-heading"
-                                        style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.9rem;">Tailored
-                                        tips to manage losses, limit excessive budgets, and grow savings</p>
-                                </div>
-                            </div>
-                            <div id="ai-suggestions-list" class="suggestions-list-container" style="margin-top: 20px;">
-                                <!-- Suggestions will be dynamically injected here -->
-                            </div>
+                        <!-- Interactive Chat Input Pill -->
+                        <div class="ai-chat-input-wrapper">
+                            <input type="text" id="ai-user-query-input" placeholder="Ask anything about your finances..." onkeydown="if(event.key==='Enter') submitAiAdvisorMessage()">
+                            <button class="ai-chat-send-btn" onclick="submitAiAdvisorMessage()" title="Send Message">
+                                <i class="fa-solid fa-arrow-up"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
 
+                <!-- Scan to Pay Panel -->
                 <div id="view-scan-pay" class="view-panel hidden">
-                    <div class="card text-center" style="max-width: 600px; margin: 0 auto;">
-                        <i class="fa-solid fa-qrcode text-primary" style="font-size: 2.5rem; margin-bottom: 10px;"></i>
-                        <h2>Simulated Scan to Pay (QR / UPI)</h2>
-                        <p style="color: var(--text-muted); margin-bottom: 25px;">Scan a merchant QR code or select one
-                            of our premium partner outlets to make an instant secure payment.</p>
+                    <div class="scan-pay-grid-2col">
+                        <!-- Left: Scan Box Card -->
+                        <div class="clay-card" style="padding: 24px;">
+                            <!-- Subnav toggle Scan QR | My QR -->
+                            <div class="scan-mode-toggle-bar">
+                                <button class="scan-mode-pill-btn active" id="btn-scan-mode-scan" onclick="setScanUIMode('scan')">Scan QR</button>
+                                <button class="scan-mode-pill-btn" id="btn-scan-mode-myqr" onclick="setScanUIMode('myqr')">My QR</button>
+                            </div>
 
-                        <div class="qr-scanner-widget">
-                            <div class="scanner-viewfinder" id="scanner-box">
-                                <!-- Real/Simulated Web Camera stream -->
-                                <video id="scanner-webcam-video" autoplay playsinline class="hidden"
-                                    style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; border-radius: var(--radius);"></video>
-                                <div class="viewfinder-corner top-left"></div>
-                                <div class="viewfinder-corner top-right"></div>
-                                <div class="viewfinder-corner bottom-left"></div>
-                                <div class="viewfinder-corner bottom-right"></div>
-
-                                <!-- The scanning laser beam -->
+                            <!-- Viewfinder Area -->
+                            <div id="scan-ui-viewfinder-container" class="qr-scanner-box-3d">
                                 <div class="scanner-laser-beam"></div>
-
-                                <div class="scanner-inner-content" id="scanner-stage-idle">
-                                    <i class="fa-solid fa-camera qr-icon-large" style="opacity: 0.5;"></i>
-                                    <p style="margin-top: 10px; color: var(--text-muted);">Viewfinder Idle</p>
-                                </div>
-
-                                <div class="scanner-inner-content hidden" id="scanner-stage-scanning">
-                                    <div class="spinner-custom"></div>
-                                    <p style="margin-top: 15px; font-weight: 500;">Scanning QR Code...</p>
-                                </div>
-
-                                <div class="scanner-inner-content hidden" id="scanner-stage-processing">
-                                    <i class="fa-solid fa-lock auth-shield-pulse text-warning"
-                                        style="font-size: 3rem;"></i>
-                                    <p style="margin-top: 15px; font-weight: 500;">Securing & Processing Bank Node...
-                                    </p>
-                                </div>
-
-                                <div class="scanner-inner-content hidden" id="scanner-stage-success">
-                                    <div class="success-checkmark-circle">
-                                        <i class="fa-solid fa-circle-check text-success" style="font-size: 4rem;"></i>
+                                <div class="qr-scanner-placeholder-content" id="scanner-stage-idle">
+                                    <div class="qr-crosshair-icon-3d">
+                                        <i class="fa-solid fa-qrcode"></i>
                                     </div>
-                                    <p style="margin-top: 15px; font-weight: bold; color: var(--success);">Payment
-                                        Successful!</p>
-                                    <p id="scan-success-details"
-                                        style="font-size: 0.9rem; color: var(--text-muted); margin-top: 5px;"></p>
-                                </div>
-
-                                <div class="scanner-inner-content hidden" id="scanner-stage-myqr"
-                                    style="z-index: 2; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 15px; background: var(--bg-card); position: absolute; top: 0; left: 0; border-radius: var(--radius);">
-                                    <h4 style="margin: 0 0 10px 0; color: var(--text-main); font-weight: 700;">My
-                                        Account QR Code</h4>
-                                    <div class="myqr-dropdown-container"
-                                        style="margin-bottom: 12px; width: 100%; max-width: 220px;">
-                                        <select id="myqr-account-select" onchange="updateMyQRDisplay()"
-                                            style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 500;">
-                                            <!-- Dynamically filled with active accounts -->
-                                        </select>
-                                    </div>
-                                    <div class="qr-code-viewfinder-wrapper"
-                                        style="background: white; padding: 10px; border-radius: 8px; box-shadow: var(--shadow-sm); display: inline-block;">
-                                        <img id="myqr-display-image" src="" alt="My Account QR"
-                                            style="width: 130px; height: 130px; display: block; border-radius: 4px;">
-                                    </div>
-                                    <p id="myqr-account-balance-label"
-                                        style="margin-top: 8px; font-size: 0.85rem; font-weight: 600; color: var(--primary);">
-                                    </p>
+                                    <p class="qr-hint-text">Click to scan QR code or drag and drop an image</p>
+                                    <button class="btn-primary" onclick="triggerScanPaymentFlow()" style="border-radius: var(--radius-pill); padding: 9px 20px; font-size: 0.88rem; margin-top: 10px;">
+                                        <i class="fa-solid fa-camera"></i> Upload QR Image
+                                    </button>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Scan Controls -->
-                        <div id="scanner-controls-container" class="scanner-details-form"
-                            style="margin-top: 25px; text-align: left;">
-                            <div class="scan-source-toggle"
-                                style="margin-bottom: 20px; display: flex; justify-content: center; gap: 10px;">
-                                <button type="button" class="btn-primary" id="btn-toggle-sim"
-                                    onclick="setScanSource('sim')"
-                                    style="flex: 1; padding: 10px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; border: none; display: flex; justify-content: center; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-desktop"></i> Simulator Mode
-                                </button>
-                                <button type="button" class="btn-secondary" id="btn-toggle-cam"
-                                    onclick="setScanSource('cam')"
-                                    style="flex: 1; padding: 10px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main); display: flex; justify-content: center; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-camera"></i> Live Web Camera
-                                </button>
-                                <button type="button" class="btn-secondary" id="btn-toggle-myqr"
-                                    onclick="setScanSource('myqr')"
-                                    style="flex: 1; padding: 10px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-white); color: var(--text-main); display: flex; justify-content: center; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-qrcode"></i> Show My QR
-                                </button>
+                            <!-- Show My QR Container -->
+                            <div id="scan-ui-myqr-container" class="qr-scanner-box-3d hidden">
+                                <div style="text-align: center; padding: 20px;">
+                                    <div class="myqr-dropdown-container" style="margin-bottom: 14px;">
+                                        <select id="myqr-account-select" onchange="updateMyQRDisplay()" class="clay-select-pill"></select>
+                                    </div>
+                                    <div style="background: white; padding: 12px; border-radius: 12px; display: inline-block; box-shadow: var(--shadow-soft);">
+                                        <img id="myqr-display-image" src="" alt="My Account QR" style="width: 150px; height: 150px; display: block;">
+                                    </div>
+                                    <p id="myqr-account-balance-label" style="margin-top: 10px; font-size: 0.9rem; font-weight: 700; color: var(--primary);"></p>
+                                </div>
                             </div>
 
-                            <div id="scanner-payment-details-group">
+                            <!-- Merchant & Quick Pay Form -->
+                            <div id="scanner-payment-details-group" style="margin-top: 20px;">
                                 <div class="input-group">
-                                    <label><i class="fa-solid fa-store"></i> Select Partner Outlet / Merchant / Our
-                                        Account</label>
-                                    <select id="scan-merchant-select" onchange="updateScanPlaceholderAmount()">
-                                        <optgroup label="Partner Merchants (Pay / Expense)">
-                                            <option value="Starbucks Coffee" data-type="merchant"
-                                                data-cat="Food & Dining" data-amt="6.50">Starbucks Coffee (Food & Dining
-                                                - $6.50)</option>
-                                            <option value="Whole Foods Market" data-type="merchant"
-                                                data-cat="Food & Dining" data-amt="74.20">Whole Foods Market (Food &
-                                                Dining - $74.20)</option>
-                                            <option value="Shell Fuel Station" data-type="merchant" data-cat="Transport"
-                                                data-amt="45.00">Shell Fuel Station (Transport - $45.00)</option>
-                                            <option value="Metro Transit Terminal" data-type="merchant"
-                                                data-cat="Transport" data-amt="2.75">Metro Transit Terminal (Transport -
-                                                $2.75)</option>
-                                            <option value="Netflix Premium" data-type="merchant"
-                                                data-cat="Entertainment" data-amt="15.49">Netflix Subscriptions
-                                                (Entertainment - $15.49)</option>
-                                        </optgroup>
-                                        <optgroup label="Our Bank Accounts (Deposit / Income)"
-                                            id="scan-our-accounts-group">
-                                            <!-- Dynamically loaded -->
-                                        </optgroup>
+                                    <label>Select Merchant / Partner Outlet</label>
+                                    <select id="scan-merchant-select" onchange="updateScanPlaceholderAmount()" class="clay-select-pill" style="width: 100%;">
+                                        <option value="Starbucks Coffee" data-type="merchant" data-cat="Food & Dining" data-amt="6.50">Starbucks Coffee (Food & Dining)</option>
+                                        <option value="Whole Foods Market" data-type="merchant" data-cat="Food & Dining" data-amt="74.20">Whole Foods Market (Grocery)</option>
+                                        <option value="Shell Fuel Station" data-type="merchant" data-cat="Transport" data-amt="45.00">Shell Fuel Station (Transport)</option>
+                                        <option value="Blinkit" data-type="merchant" data-cat="Shopping" data-amt="540.00">Blinkit (Quick Commerce)</option>
+                                        <option value="Cafe Coffee Day" data-type="merchant" data-cat="Food & Dining" data-amt="250.00">Cafe Coffee Day</option>
+                                        <option value="PhonePe Transfer" data-type="merchant" data-cat="Others" data-amt="1000.00">PhonePe Transfer</option>
                                     </select>
                                 </div>
-
                                 <div class="input-group">
-                                    <label><i class="fa-solid fa-receipt"></i> Custom Payment Amount (In USD
-                                        Base)</label>
-                                    <input type="number" id="scan-custom-amount"
-                                        placeholder="Or override with custom amount..." step="0.01">
+                                    <label>Payment Amount</label>
+                                    <input type="number" id="scan-custom-amount" placeholder="Amount to pay" step="0.01">
                                 </div>
-
-                                <button class="btn-primary btn-full-width" id="btn-start-scan"
-                                    onclick="triggerScanPaymentFlow()"
-                                    style="margin-top: 15px; padding: 12px; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-credit-card"></i> Authenticate & Pay Now
+                                <button class="btn-primary btn-full-width" onclick="triggerScanPaymentFlow()" style="margin-top: 10px; border-radius: var(--radius-md); background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);">
+                                    <i class="fa-solid fa-bolt"></i> Authenticate & Pay Now
                                 </button>
                             </div>
+                        </div>
 
-                            <!-- My QR Info Message -->
-                            <div id="myqr-info-message" class="hidden"
-                                style="margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); background: var(--bg-main); padding: 12px; border-radius: 8px; line-height: 1.4;">
-                                <i class="fa-solid fa-circle-info text-info"></i> <strong>Receive Mode Active:</strong>
-                                Share this screen containing your account's QR code. Senders can scan it to instantly
-                                transfer money into your account.
+                        <!-- Right: Recent Payments Card -->
+                        <div class="clay-card">
+                            <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 16px;">Recent Payments</h3>
+                            <div id="scan-recent-payments-list" style="display: flex; flex-direction: column; gap: 12px;">
+                                <!-- Dynamically populated or styled default list matching the image -->
                             </div>
                         </div>
-                    </div>
                 </div>
             </div>
         </main>
@@ -1366,7 +1320,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="script.js?v=10"></script>
+    <script src="script.js?v=11"></script>
 </body>
 
 </html>
