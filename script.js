@@ -3237,6 +3237,28 @@ window.removeBankAccount = removeBankAccount;
 window.toggleDarkTheme = toggleDarkTheme;
 window.handleTxSearchAndFilter = handleTxSearchAndFilter;
 window.updateMyQRDisplay = updateMyQRDisplay;
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) {
+        sidebar.classList.toggle('open');
+    }
+    if (overlay) {
+        overlay.classList.toggle('active');
+    }
+}
+
+function closeSidebarOnMobile() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) {
+        sidebar.classList.remove('open');
+    }
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
+}
+
 async function refreshDatabaseStatus() {
     const refreshIcon = document.getElementById('supabase-refresh-icon');
     if (refreshIcon) refreshIcon.classList.add('fa-spin');
@@ -3276,11 +3298,12 @@ async function refreshDatabaseStatus() {
     }
 }
 
-window.refreshDatabaseStatus = refreshDatabaseStatus;
 window.toggleSidebar = toggleSidebar;
 window.closeSidebarOnMobile = closeSidebarOnMobile;
+window.refreshDatabaseStatus = refreshDatabaseStatus;
 
 // Initial DB check on startup
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(refreshDatabaseStatus, 500);
 });
+
