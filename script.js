@@ -3097,6 +3097,16 @@ async function updateUserProfile(event) {
     }
 }
 
+function promptPhotoUrl() {
+    const photoEl = document.getElementById('settings-profile-photo-url');
+    const current = photoEl ? photoEl.value : '';
+    const newUrl = prompt('Enter image URL for profile photo:', current);
+    if (newUrl !== null) {
+        if (photoEl) photoEl.value = newUrl.trim();
+        previewSettingsAvatar();
+    }
+}
+
 function updateBudgetLimitInputDisplay() {
     const symbolEl = document.getElementById('settings-budget-currency-symbol');
     const inputEl = document.getElementById('settings-budget-limit-input');
@@ -3427,103 +3437,146 @@ function sendAiPrompt(promptText) {
     const input = document.getElementById('ai-user-query-input');
     if (input) {
         input.value = promptText;
-        submitAiAdvisorMessage();
     }
+    submitAiAdvisorMessage();
 }
 
 async function submitAiAdvisorMessage() {
     const input = document.getElementById('ai-user-query-input');
+    const sendBtn = document.querySelector('.ai-chat-send-btn');
     if (!input) return;
+
     const message = input.value.trim();
-    if (!message) return;
-    input.value = '';
+    // 1. Handle empty input safely
+    if (!message) {
+        input.focus();
+        return;
+    }
 
     const historyBox = document.getElementById('ai-chat-history-box');
     if (!historyBox) return;
 
+    // 2. Set loading state: disable input & send button
+    input.value = '';
+    input.disabled = true;
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.style.opacity = '0.5';
+    }
+
     // Append User Message Bubble
+    const escapedMsg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const userInitial = (localStorage.getItem('user_name') || 'N').charAt(0).toUpperCase();
     const userMsgHTML = `
         <div class="ai-message-bubble-row user-bubble-row" style="justify-content: flex-end; margin-left: auto;">
             <div class="ai-message-speech-bubble" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border-radius: 18px 4px 18px 18px; border: none; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);">
-                <p style="margin: 0; font-weight: 500;">${message}</p>
+                <p style="margin: 0; font-weight: 500;">${escapedMsg}</p>
             </div>
-            <div class="avatar-3d" style="width: 38px; height: 38px; font-size: 0.95rem; flex-shrink: 0;">N</div>
+            <div class="avatar-3d" style="width: 38px; height: 38px; font-size: 0.95rem; flex-shrink: 0;">${userInitial}</div>
         </div>
     `;
     historyBox.innerHTML += userMsgHTML;
 
-    // Append Typing Indicator
-    const typingId = `ai-typing-${Date.now()}`;
-    const typingHTML = `
-        <div class="ai-message-bubble-row" id="${typingId}">
+    // Append Loading Indicator Bubble
+    const thinkingId = `ai-thinking-${Date.now()}`;
+    const thinkingHTML = `
+        <div class="ai-message-bubble-row" id="${thinkingId}">
             <div class="ai-avatar-small-3d"><i class="fa-solid fa-brain"></i></div>
-            <div class="ai-message-speech-bubble" style="color: var(--text-muted);">
-                <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 6px; color: var(--primary);"></i> AI is analyzing your finances...
+            <div class="ai-message-speech-bubble" style="color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i>
+                <span>Analyzing your financial data...</span>
             </div>
         </div>
     `;
-    historyBox.innerHTML += typingHTML;
+    historyBox.innerHTML += thinkingHTML;
     historyBox.scrollTop = historyBox.scrollHeight;
 
     const token = localStorage.getItem('auth_token');
-    let aiReply = "";
+
+    // Handle unauthenticated user gracefully
+    if (!token) {
+        const thinkingEl = document.getElementById(thinkingId);
+        if (thinkingEl) thinkingEl.remove();
+
+        historyBox.innerHTML += `
+            <div class="ai-message-bubble-row">
+                <div class="ai-avatar-small-3d"><i class="fa-solid fa-brain"></i></div>
+                <div class="ai-message-speech-bubble" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3);">
+                    <p style="margin: 0;">⚠️ Please log in to your account to get personalized financial advice.</p>
+                </div>
+            </div>
+        `;
+        historyBox.scrollTop = historyBox.scrollHeight;
+        input.disabled = false;
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.style.opacity = '1';
+        }
+        input.focus();
+        return;
+    }
 
     try {
-        const res = await fetch(`${API_BASE}/ai/chat`, {
+        const response = await fetch(`${API_BASE}/ai/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({ message: message })
         });
-        if (res.ok) {
-            const data = await res.json();
-            aiReply = data.reply;
+
+        const thinkingEl = document.getElementById(thinkingId);
+        if (thinkingEl) thinkingEl.remove();
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `Server responded with status ${response.status}`);
         }
-    } catch (e) {
-        // Fallback local response
-    }
 
-    if (!aiReply) {
-        let inc = 0, exp = 0;
-        transactionDatabase.forEach(t => {
-            if (t.type === 'income') inc += t.amount;
-            else exp += t.amount;
-        });
-        const totalInc = inc || 24500;
-        const totalExp = exp || 18200;
-        const savings = totalInc - totalExp;
-        const rate = totalInc > 0 ? Math.round((savings / totalInc) * 100) : 25.7;
-        const lower = message.toLowerCase();
+        const data = await response.json();
+        const rawReply = data.reply || "I couldn't process that query. Please try asking about your savings, budget, or accounts.";
 
-        if (lower.includes('spend') || lower.includes('analyse') || lower.includes('analyze')) {
-            aiReply = `Based on your recent activity, your total expenses are **₹${totalExp.toLocaleString('en-IN')}** across your top categories (Food & Dining 28%, Shopping 22%, Bills & Utilities 18%). To optimize cashflow, consider capping discretionary dining to 15% of total income.`;
-        } else if (lower.includes('save') || lower.includes('money')) {
-            aiReply = `Your current net savings are **₹${savings.toLocaleString('en-IN')}** with a healthy savings rate of **${rate}%**. Setting up automated transfers to your **Savings Account (₹40,920)** on payday will guarantee hitting your ₹1,00,000 emergency fund target!`;
-        } else if (lower.includes('summary') || lower.includes('month')) {
-            aiReply = `📊 **Monthly Financial Summary:**\n- **Total Income:** ₹${totalInc.toLocaleString('en-IN')}\n- **Total Expenses:** ₹${totalExp.toLocaleString('en-IN')}\n- **Net Savings:** ₹${savings.toLocaleString('en-IN')} (${rate}% savings rate)\n- **Active Ledgers:** 4 nodes synchronized.`;
-        } else if (lower.includes('budget') || lower.includes('plan')) {
-            aiReply = `🎯 **Recommended 50/30/20 Budget Plan:**\n- **Needs (50%):** ₹${Math.round(totalInc * 0.5).toLocaleString('en-IN')} (Utilities, Groceries, Rent)\n- **Wants (30%):** ₹${Math.round(totalInc * 0.3).toLocaleString('en-IN')} (Dining, Entertainment, Shopping)\n- **Savings (20%):** ₹${Math.round(totalInc * 0.2).toLocaleString('en-IN')} (Emergency Fund & Laptop Goal).`;
-        } else {
-            aiReply = `I've analyzed your financial node. Your total balance across all accounts is **₹53,760**. You are well on track with your goals! Feel free to ask about spending patterns, budget limits, or savings targets.`;
-        }
-    }
+        // Format markdown boldly and line breaks safely
+        const formattedReply = rawReply
+            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            .replace(/\n/g, '<br>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>');
 
-    const typingEl = document.getElementById(typingId);
-    if (typingEl) typingEl.remove();
-
-    const formattedReply = aiReply.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    const aiMsgHTML = `
-        <div class="ai-message-bubble-row">
-            <div class="ai-avatar-small-3d"><i class="fa-solid fa-brain"></i></div>
-            <div class="ai-message-speech-bubble">
-                <p style="margin: 0; line-height: 1.6;">${formattedReply}</p>
+        const botMsgHTML = `
+            <div class="ai-message-bubble-row">
+                <div class="ai-avatar-small-3d"><i class="fa-solid fa-brain"></i></div>
+                <div class="ai-message-speech-bubble">
+                    <p style="margin: 0; line-height: 1.6;">${formattedReply}</p>
+                </div>
             </div>
-        </div>
-    `;
-    historyBox.innerHTML += aiMsgHTML;
-    historyBox.scrollTop = historyBox.scrollHeight;
+        `;
+        historyBox.innerHTML += botMsgHTML;
+    } catch (err) {
+        const thinkingEl = document.getElementById(thinkingId);
+        if (thinkingEl) thinkingEl.remove();
+
+        console.error('AI Advisor error:', err);
+        const errHTML = `
+            <div class="ai-message-bubble-row">
+                <div class="ai-avatar-small-3d" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="ai-message-speech-bubble" style="border-color: rgba(239, 68, 68, 0.4); color: var(--danger);">
+                    <p style="margin: 0;">⚠️ Error communicating with AI Advisor: ${err.message}. Please try again.</p>
+                </div>
+            </div>
+        `;
+        historyBox.innerHTML += errHTML;
+    } finally {
+        // Reset loading state
+        input.disabled = false;
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.style.opacity = '1';
+        }
+        input.focus();
+        historyBox.scrollTop = historyBox.scrollHeight;
+    }
 }
 
 function setScanUIMode(mode) {
@@ -3574,6 +3627,91 @@ function renderScanRecentPayments() {
     `).join('');
 }
 
+async function refreshDatabaseStatus() {
+    const refreshIcon = document.getElementById('supabase-refresh-icon');
+    const statusPill = document.getElementById('supabase-header-pill');
+    const pillText = document.getElementById('supabase-pill-text');
+    const metaStatus = document.getElementById('db-meta-status');
+    const metaEngine = document.getElementById('db-meta-engine');
+    const metaProject = document.getElementById('db-meta-project');
+    const metaHost = document.getElementById('db-meta-host');
+    const metaRecords = document.getElementById('db-meta-records');
+
+    if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+    // 1. Show Checking State
+    if (pillText) {
+        pillText.innerHTML = '<span class="pulse-dot-yellow" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#f59e0b;margin-right:5px;"></span> Checking...';
+    }
+    if (metaStatus) {
+        metaStatus.innerHTML = '<span class="pulse-dot-yellow" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;margin-right:6px;"></span> Checking Connection...';
+        metaStatus.style.color = '#f59e0b';
+    }
+
+    try {
+        const fetchFn = (typeof originalFetch === 'function') ? originalFetch : window.fetch;
+        const response = await fetchFn(`${API_BASE}/db-status`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server returned HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data && data.connected) {
+            // 2. Connected State
+            if (statusPill) statusPill.style.display = 'inline-flex';
+            if (pillText) pillText.textContent = `Supabase: ${data.project_id || 'pybsbrbytfbfdkdwhrda'}`;
+            if (metaStatus) {
+                metaStatus.innerHTML = '<span class="pulse-dot-green"></span> Connected & Synced';
+                metaStatus.style.color = '#10b981';
+            }
+            if (metaEngine) metaEngine.textContent = data.engine || 'Supabase PostgreSQL';
+            if (metaProject) metaProject.textContent = data.project_id || 'pybsbrbytfbfdkdwhrda';
+            if (metaHost) {
+                try {
+                    metaHost.textContent = data.supabase_url ? new URL(data.supabase_url).hostname : 'db.pybsbrbytfbfdkdwhrda.supabase.co';
+                } catch (e) {
+                    metaHost.textContent = 'db.pybsbrbytfbfdkdwhrda.supabase.co';
+                }
+            }
+            if (metaRecords && data.stats) {
+                const total = (data.stats.users || 0) + (data.stats.transactions || 0) + (data.stats.bank_accounts || 0) + (data.stats.goals || 0);
+                metaRecords.textContent = `${total} Cloud Records (${data.stats.transactions || 0} Tx)`;
+            }
+        } else {
+            // 3. Disconnected State from API response
+            const errMsg = data?.error || 'Database unavailable';
+            if (pillText) {
+                pillText.innerHTML = '<span class="pulse-dot-red" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;margin-right:5px;"></span> Supabase: Disconnected';
+            }
+            if (metaStatus) {
+                metaStatus.innerHTML = '<span class="pulse-dot-red" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px;"></span> Disconnected';
+                metaStatus.style.color = '#ef4444';
+            }
+            if (metaRecords) metaRecords.textContent = `Error: ${errMsg}`;
+        }
+    } catch (err) {
+        // 4. Disconnected / Network Error State
+        console.warn('Database status check encountered network error:', err.message);
+        if (pillText) {
+            pillText.innerHTML = '<span class="pulse-dot-red" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;margin-right:5px;"></span> Supabase: Offline';
+        }
+        if (metaStatus) {
+            metaStatus.innerHTML = '<span class="pulse-dot-red" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px;"></span> Offline / Disconnected';
+            metaStatus.style.color = '#ef4444';
+        }
+        if (metaRecords) metaRecords.textContent = 'Offline (Check backend service)';
+    } finally {
+        if (refreshIcon) {
+            setTimeout(() => refreshIcon.classList.remove('fa-spin'), 500);
+        }
+    }
+}
+
 // Global Window Exports
 window.switchTab = switchTab;
 window.toggleSidebar = toggleSidebar;
@@ -3607,6 +3745,7 @@ window.showAccountQRModal = showAccountQRModal;
 window.hideAccountQRModal = hideAccountQRModal;
 window.updateMyQRDisplay = updateMyQRDisplay;
 window.triggerScanPaymentFlow = triggerScanPaymentFlow;
+window.promptPhotoUrl = promptPhotoUrl;
 
 // Initial DB check and recent payments on startup
 document.addEventListener('DOMContentLoaded', () => {
