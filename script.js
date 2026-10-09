@@ -861,77 +861,144 @@ function renderDashboardView(incomeSum, expenseSum) {
 
     // Recent Transactions
     const recentTxList = document.getElementById('dashboard-recent-tx-list');
-    recentTxList.innerHTML = '';
+    if (recentTxList) {
+        recentTxList.innerHTML = '';
 
-    const recentTxs = [...transactionDatabase]
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 5);
+        const recentTxs = [...transactionDatabase]
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 5);
 
-    if (recentTxs.length === 0) {
-        recentTxList.innerHTML = `<p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 20px;">No transactions recorded yet.</p>`;
-    } else {
-        recentTxs.forEach(tx => {
-            const iconClass = tx.type === 'income' ? 'fa-arrow-down' : 'fa-arrow-up';
-            const wrapperClass = tx.type === 'income' ? 'recent-tx-icon-income' : 'recent-tx-icon-expense';
-            const amountColor = tx.type === 'income' ? 'var(--success)' : 'var(--danger)';
-            const prefix = tx.type === 'income' ? '+' : '-';
-            const formattedAmt = formatCurrencyString(tx.amount);
-
-            const itemHTML = `
-                <div class="recent-tx-row" onclick="showTransactionDetails(${tx.id})">
-                    <div class="recent-tx-left">
-                        <div class="recent-tx-icon-wrapper ${wrapperClass}">
-                            <i class="fa-solid ${iconClass}"></i>
+        if (recentTxs.length === 0) {
+            recentTxList.innerHTML = `
+                <div class="recent-tx-empty-3d">
+                    <div class="empty-doc-wrapper">
+                        <div class="empty-doc-3d">
+                            <div class="empty-doc-line"></div>
+                            <div class="empty-doc-line"></div>
+                            <div class="empty-doc-line"></div>
                         </div>
-                        <div class="recent-tx-details">
-                            <span class="recent-tx-desc">${tx.desc}</span>
-                            <span class="recent-tx-meta">${tx.date} • ${tx.category}</span>
-                        </div>
-                    </div>
-                    <div class="recent-tx-right">
-                        <span class="recent-tx-amount" style="color: ${amountColor};">${prefix}${formattedAmt}</span>
-                        <span style="font-size: 0.7rem; color: var(--text-muted);"><i class="fa-solid fa-university"></i> ${tx.account_name || 'None'}</span>
+                        <div class="empty-doc-sphere sphere-left"></div>
+                        <div class="empty-doc-sphere sphere-right"></div>
                     </div>
                 </div>
             `;
-            recentTxList.innerHTML += itemHTML;
-        });
+        } else {
+            recentTxs.forEach(tx => {
+                const iconClass = tx.type === 'income' ? 'fa-arrow-down' : 'fa-arrow-up';
+                const wrapperClass = tx.type === 'income' ? 'recent-tx-icon-income' : 'recent-tx-icon-expense';
+                const amountColor = tx.type === 'income' ? 'var(--success)' : 'var(--danger)';
+                const prefix = tx.type === 'income' ? '+' : '-';
+                const formattedAmt = formatCurrencyString(tx.amount);
+
+                const itemHTML = `
+                    <div class="recent-tx-row" onclick="showTransactionDetails(${tx.id})">
+                        <div class="recent-tx-left">
+                            <div class="recent-tx-icon-wrapper ${wrapperClass}">
+                                <i class="fa-solid ${iconClass}"></i>
+                            </div>
+                            <div class="recent-tx-details">
+                                <span class="recent-tx-desc">${tx.desc}</span>
+                                <span class="recent-tx-meta">${tx.date} • ${tx.category}</span>
+                            </div>
+                        </div>
+                        <div class="recent-tx-right">
+                            <span class="recent-tx-amount" style="color: ${amountColor};">${prefix}${formattedAmt}</span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);"><i class="fa-solid fa-university"></i> ${tx.account_name || 'None'}</span>
+                        </div>
+                    </div>
+                `;
+                recentTxList.innerHTML += itemHTML;
+            });
+        }
+    }
+
+    // Quick Account Access list in Dashboard
+    const dashboardAccountsList = document.getElementById('dashboard-accounts-list');
+    if (dashboardAccountsList) {
+        dashboardAccountsList.innerHTML = '';
+        if (!accountDatabase || accountDatabase.length === 0) {
+            dashboardAccountsList.innerHTML = `
+                <div style="display: flex; justify-content: center; align-items: center; padding: 20px 10px;">
+                    <div style="position: relative; width: 180px; height: 100px; display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 130px; height: 75px; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 14px; transform: rotate(-8deg); position: absolute; box-shadow: 0 8px 16px rgba(59, 130, 246, 0.15); border: 1px solid rgba(255,255,255,0.8);"></div>
+                        <div style="width: 140px; height: 80px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 14px; transform: rotate(4deg); position: absolute; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2); border: 1.5px solid rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="fa-solid fa-university" style="font-size: 1.8rem; color: #3b82f6;"></i>
+                            <div style="width: 40px; height: 4px; background: #93c5fd; border-radius: 2px;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            accountDatabase.slice(0, 3).forEach(acc => {
+                dashboardAccountsList.innerHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--glass-bg); padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--glass-border); box-shadow: var(--shadow-soft); cursor: pointer;" onclick="switchTab('accounts')">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="icon-badge-3d badge-blue" style="width: 34px; height: 34px; font-size: 0.9rem;">
+                                <i class="fa-solid fa-building-columns"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--text-main); margin: 0;">${acc.name}</h4>
+                                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">${acc.type}</span>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: var(--text-main);">${formatCurrencyString(acc.balance)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
     }
 
     // Expense categories breakdown with unique colors
     const expenseCategoriesContainer = document.getElementById('dashboard-expense-categories');
-    expenseCategoriesContainer.innerHTML = '';
+    if (expenseCategoriesContainer) {
+        expenseCategoriesContainer.innerHTML = '';
 
-    const expenseTxs = transactionDatabase.filter(tx => tx.type === 'expense');
-    let categoryExpenses = {};
-    let totalExpenses = 0;
-    expenseTxs.forEach(tx => {
-        categoryExpenses[tx.category] = (categoryExpenses[tx.category] || 0) + tx.amount;
-        totalExpenses += tx.amount;
-    });
+        const expenseTxs = transactionDatabase.filter(tx => tx.type === 'expense');
+        let categoryExpenses = {};
+        let totalExpenses = 0;
+        expenseTxs.forEach(tx => {
+            categoryExpenses[tx.category] = (categoryExpenses[tx.category] || 0) + tx.amount;
+            totalExpenses += tx.amount;
+        });
 
-    if (expenseTxs.length === 0) {
-        expenseCategoriesContainer.innerHTML = `<p style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 15px;">No expenses recorded this month.</p>`;
-    } else {
-        const sortedCats = Object.entries(categoryExpenses).sort((a, b) => b[1] - a[1]);
-        sortedCats.forEach(([cat, amt]) => {
-            const pct = totalExpenses > 0 ? Math.round((amt / totalExpenses) * 100) : 0;
-            const color = CATEGORY_COLORS[cat] || CATEGORY_COLORS['Others'];
-            const itemHTML = `
-                <div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; margin-bottom: 2px;">
-                        <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}; display: inline-block;"></span> ${cat}</span>
-                        <span>${formatCurrencyString(amt)} (${pct}%)</span>
-                    </div>
-                    <div class="progress-container" style="height: 6px; margin: 0; background: var(--border); border-radius: 3px;">
-                        <div class="progress-bar" style="width: ${pct}%; background: ${color}; border-radius: 3px;"></div>
+        if (expenseTxs.length === 0) {
+            expenseCategoriesContainer.innerHTML = `
+                <div style="display: flex; align-items: flex-end; justify-content: center; gap: 10px; padding: 25px 10px 10px;">
+                    <div style="width: 22px; height: 30px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #93c5fd 0%, #60a5fa 100%); box-shadow: 0 4px 8px rgba(59,130,246,0.25);"></div>
+                    <div style="width: 22px; height: 50px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #c4b5fd 0%, #a78bfa 100%); box-shadow: 0 4px 8px rgba(167,139,250,0.25);"></div>
+                    <div style="width: 22px; height: 70px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #6ee7b7 0%, #34d399 100%); box-shadow: 0 4px 8px rgba(52,211,153,0.25);"></div>
+                    <div style="width: 22px; height: 85px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%); box-shadow: 0 4px 8px rgba(37,99,235,0.3);"></div>
+                    <div style="background: var(--glass-bg); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--glass-border); margin-left: 14px; display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span><div style="width: 40px; height: 4px; background: #e2e8f0; border-radius: 2px;"></div></div>
+                        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #f43f5e;"></span><div style="width: 32px; height: 4px; background: #e2e8f0; border-radius: 2px;"></div></div>
+                        <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span><div style="width: 48px; height: 4px; background: #e2e8f0; border-radius: 2px;"></div></div>
                     </div>
                 </div>
             `;
-            expenseCategoriesContainer.innerHTML += itemHTML;
-        });
+        } else {
+            const sortedCats = Object.entries(categoryExpenses).sort((a, b) => b[1] - a[1]);
+            sortedCats.forEach(([cat, amt]) => {
+                const pct = totalExpenses > 0 ? Math.round((amt / totalExpenses) * 100) : 0;
+                const color = CATEGORY_COLORS[cat] || CATEGORY_COLORS['Others'];
+                const itemHTML = `
+                    <div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; margin-bottom: 4px;">
+                            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}; display: inline-block;"></span> ${cat}</span>
+                            <span>${formatCurrencyString(amt)} (${pct}%)</span>
+                        </div>
+                        <div class="progress-container" style="height: 7px; margin: 0; background: rgba(226, 232, 240, 0.7); border-radius: 4px;">
+                            <div class="progress-bar" style="width: ${pct}%; background: ${color}; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                `;
+                expenseCategoriesContainer.innerHTML += itemHTML;
+            });
+        }
     }
 }
+
 
 function renderTransactionsView() {
     const tableBody = document.getElementById('tx-table-body');

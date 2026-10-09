@@ -80,8 +80,8 @@
         <aside class="sidebar">
             <button class="sidebar-close-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button>
             <div class="sidebar-brand">
-                <i class="fa-solid fa-chart-line"></i>
-                <h2>Finance Tracker</h2>
+                <div class="sidebar-brand-icon-3d"><i class="fa-solid fa-chart-line"></i></div>
+                <h2>Finance <span style="color: var(--primary);">Tracker</span></h2>
             </div>
 
             <nav class="sidebar-menu">
@@ -117,13 +117,13 @@
                 </div>
 
                 <div class="user-profile-summary">
-                    <div class="avatar" id="profile-avatar">U</div>
+                    <div class="avatar-3d" id="profile-avatar">N</div>
                     <div class="user-info">
-                        <h4 id="profile-display-name">Guest User</h4>
-                        <p id="profile-display-email">guest@example.com</p>
+                        <h4 id="profile-display-name">nivash</h4>
+                        <p id="profile-display-email">nivashnivash868@gmail.com</p>
                     </div>
                 </div>
-                <button class="btn-logout-small" onclick="handleLogout()"><i class="fa-solid fa-power-off"></i>
+                <button class="btn-logout-3d" onclick="handleLogout()"><i class="fa-solid fa-power-off"></i>
                     Logout</button>
             </div>
         </aside>
@@ -143,21 +143,18 @@
                         <i class="fa-solid fa-database"></i>
                         <span id="supabase-pill-text">Supabase: pybsbrbytfbfdkdwhrda</span>
                     </div>
-                    <button class="btn-secondary" id="header-btn-guide" onclick="showWelcomeOnboardingModal()"
-                        style="border: 1px solid var(--border); background: var(--bg-card); color: var(--text); padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer;"
-                        title="Show Welcome Guide">
-                        <i class="fa-solid fa-circle-question text-primary"></i> Guide
+                    <button class="btn-header-guide" id="header-btn-guide" onclick="showWelcomeOnboardingModal()" title="Show Welcome Guide">
+                        <i class="fa-solid fa-circle-question"></i> Guide
                     </button>
                     <button class="btn-primary hidden" id="header-btn-add-tx" onclick="showTransactionForm()"
-                        style="padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600;">
+                        style="padding: 10px 16px; border-radius: 14px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600;">
                         <i class="fa-solid fa-plus"></i> Add Transaction
                     </button>
                     <button class="btn-secondary hidden" id="header-btn-add-account" onclick="showAccountFormModal()"
-                        style="border: 1px solid var(--border); background: var(--bg-card); color: var(--text); padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer;">
+                        style="border: 1px solid var(--border); background: var(--bg-card); color: var(--text); padding: 10px 16px; border-radius: 14px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer;">
                         <i class="fa-solid fa-university"></i> Add Account
                     </button>
-                    <button class="btn-secondary" id="header-btn-scan-pay" onclick="switchTab('scan-pay')"
-                        style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer;">
+                    <button class="btn-header-scan" id="header-btn-scan-pay" onclick="switchTab('scan-pay')">
                         <i class="fa-solid fa-qrcode"></i> Scan to Pay
                     </button>
                 </div>
@@ -383,97 +380,151 @@
             </div>
 
             <div class="content-body">
-                <!-- Dashboard Panel -->
+                <!-- Dashboard Panel (Matching Reference UI) -->
                 <div id="view-dashboard" class="view-panel">
-                    <div class="metrics-grid">
-                        <div class="card card-income" onclick="switchTab('income')"
-                            title="Click to view income details">
-                            <div class="metric-icon"><i class="fa-solid fa-arrow-down"></i></div>
-                            <div>
-                                <h3>Total Income</h3>
-                                <p class="amount" id="dashboard-sum-income">0.00</p>
+                    <!-- Top 3 Stat Cards with Sparkline Wave Graphics -->
+                    <div class="metrics-grid-3d">
+                        <div class="clay-card card-top-stat card-top-income" onclick="switchTab('income')" title="Click to view income details" style="cursor: pointer;">
+                            <div class="card-header-row">
+                                <div class="icon-badge-3d badge-income"><i class="fa-solid fa-arrow-down"></i></div>
+                                <button class="btn-dots-3d" title="Options"><i class="fa-solid fa-ellipsis"></i></button>
+                            </div>
+                            <div class="card-content-area">
+                                <span class="card-title-sub">Total Income</span>
+                                <div class="card-main-amount" id="dashboard-sum-income">0.00</div>
+                            </div>
+                            <div class="card-3d-visual">
+                                <svg viewBox="0 0 160 80" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="grad-income-wave" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" stop-color="#34d399" stop-opacity="0.35"/>
+                                            <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M0,65 C40,75 70,25 110,45 C135,55 150,20 160,15 L160,80 L0,80 Z" fill="url(#grad-income-wave)"/>
+                                    <path d="M0,65 C40,75 70,25 110,45 C135,55 150,20 160,15" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
+                                </svg>
                             </div>
                         </div>
-                        <div class="card card-expense" onclick="switchTab('expenses')"
-                            title="Click to view expenses details">
-                            <div class="metric-icon"><i class="fa-solid fa-arrow-up"></i></div>
-                            <div>
-                                <h3>Total Expenses</h3>
-                                <p class="amount" id="dashboard-sum-expense">0.00</p>
+
+                        <div class="clay-card card-top-stat card-top-expense" onclick="switchTab('expenses')" title="Click to view expenses details" style="cursor: pointer;">
+                            <div class="card-header-row">
+                                <div class="icon-badge-3d badge-expense"><i class="fa-solid fa-arrow-up"></i></div>
+                                <button class="btn-dots-3d" title="Options"><i class="fa-solid fa-ellipsis"></i></button>
+                            </div>
+                            <div class="card-content-area">
+                                <span class="card-title-sub">Total Expenses</span>
+                                <div class="card-main-amount" id="dashboard-sum-expense">0.00</div>
+                            </div>
+                            <div class="card-3d-visual">
+                                <svg viewBox="0 0 160 80" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="grad-expense-wave" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" stop-color="#fb7185" stop-opacity="0.35"/>
+                                            <stop offset="100%" stop-color="#f43f5e" stop-opacity="0.0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M0,70 C35,70 65,45 95,60 C125,75 145,35 160,25 L160,80 L0,80 Z" fill="url(#grad-expense-wave)"/>
+                                    <path d="M0,70 C35,70 65,45 95,60 C125,75 145,35 160,25" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-linecap="round"/>
+                                </svg>
                             </div>
                         </div>
-                        <div class="card card-balance" onclick="showAccountBalancesBreakdown()"
-                            title="Click for account breakdown">
-                            <div class="metric-icon"><i class="fa-solid fa-scale-balanced"></i></div>
-                            <div>
-                                <h3>Total Balance</h3>
-                                <p class="amount" id="dashboard-sum-balance">0.00</p>
+
+                        <div class="clay-card card-top-stat card-top-balance" onclick="showAccountBalancesBreakdown()" title="Click for account breakdown" style="cursor: pointer;">
+                            <div class="card-header-row">
+                                <div class="icon-badge-3d badge-balance"><i class="fa-solid fa-scale-balanced"></i></div>
+                                <button class="btn-dots-3d" title="Options"><i class="fa-solid fa-ellipsis"></i></button>
+                            </div>
+                            <div class="card-content-area">
+                                <span class="card-title-sub">Total Balance</span>
+                                <div class="card-main-amount" id="dashboard-sum-balance">0.00</div>
+                            </div>
+                            <div class="card-3d-visual">
+                                <svg viewBox="0 0 160 80" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="grad-balance-wave" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.35"/>
+                                            <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M0,75 C45,75 75,55 110,65 C135,70 145,40 160,30 L160,80 L0,80 Z" fill="url(#grad-balance-wave)"/>
+                                    <path d="M0,75 C45,75 75,55 110,65 C135,70 145,40 160,30" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>
+                                </svg>
                             </div>
                         </div>
                     </div>
 
-                    <div class="grid-two-col">
-                        <div class="card">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                <h3><i class="fa-solid fa-clock-rotate-left text-primary"></i> Recent Transactions</h3>
-                                <button class="btn-secondary" onclick="switchTab('transactions')"
-                                    style="padding: 4px 10px; font-size: 0.8rem; border-radius: 6px; font-weight: 600; cursor: pointer;">View
-                                    Full Ledger</button>
+                    <!-- Middle Grid: Recent Transactions & Quick Account Access -->
+                    <div class="dashboard-grid-2col">
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-blue" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-clock-rotate-left"></i>
+                                    </div>
+                                    <h3>Recent Transactions</h3>
+                                </div>
+                                <button class="btn-glass-pill" onclick="switchTab('transactions')">View Full Ledger <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></button>
                             </div>
-                            <div id="dashboard-recent-tx-list"
-                                style="display: flex; flex-direction: column; gap: 12px;">
-                                <!-- Dynamically loaded recent transactions -->
+                            <div id="dashboard-recent-tx-list" style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px;">
+                                <!-- Dynamically loaded recent transactions or 3D empty document state -->
                             </div>
                         </div>
 
-                        <div class="card">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                <h3><i class="fa-solid fa-wallet text-warning"></i> Quick Account Access</h3>
-                                <button class="btn-secondary" onclick="switchTab('accounts')"
-                                    style="padding: 4px 10px; font-size: 0.8rem; border-radius: 6px; font-weight: 600; cursor: pointer;">Manage
-                                    Accounts</button>
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-blue" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-credit-card"></i>
+                                    </div>
+                                    <h3>Quick Account Access</h3>
+                                </div>
+                                <button class="btn-glass-pill" onclick="switchTab('accounts')">Manage Accounts <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></button>
                             </div>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Live
-                                synchronized checking and savings vaults</p>
+                            <p class="card-subtitle-desc">Live synchronized checking and savings vaults</p>
                             <div id="dashboard-accounts-list" style="display: flex; flex-direction: column; gap: 10px;">
-                                <!-- Dynamically loaded mini account rows -->
+                                <!-- Dynamically loaded mini account rows / 3D cards -->
                             </div>
                         </div>
                     </div>
 
-                    <!-- Dashboard Secondary Grid -->
-                    <div class="grid-two-col" style="margin-top: 20px;">
+                    <!-- Bottom Grid: Monthly Salary Spend Speed & Category Distribution -->
+                    <div class="dashboard-grid-2col" style="margin-top: 20px;">
                         <!-- Left: Monthly Budget Burn Speed -->
-                        <div class="card">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                <h3><i class="fa-solid fa-fire text-danger"></i> Monthly Salary Spend Speed</h3>
-                                <span id="dashboard-days-left"
-                                    style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">🗓️ -- Days
-                                    Left</span>
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-blue" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-fire text-danger"></i>
+                                    </div>
+                                    <h3>Monthly Salary Spend Speed</h3>
+                                </div>
+                                <span id="dashboard-days-left" class="btn-glass-pill" style="color: var(--text-muted); cursor: default;">
+                                    <i class="fa-regular fa-calendar"></i> -- Days Left
+                                </span>
                             </div>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Ratio of total
-                                spending compared to salary</p>
-                            <div
-                                style="display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px;">
+                            <p class="card-subtitle-desc">Ratio of total spending compared to salary</p>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.92rem; font-weight: 700; margin-bottom: 10px; color: var(--text-main);">
                                 <span>Salary Burn Progress</span>
                                 <span id="dashboard-salary-ratio">$0.00 / $0.00</span>
                             </div>
-                            <div class="progress-container" style="height: 12px; margin: 0; border-radius: 6px;">
-                                <div id="dashboard-salary-progress" class="progress-bar bar-success"
-                                    style="width: 0%; border-radius: 6px;"></div>
+                            <div style="height: 14px; background: rgba(226, 232, 240, 0.7); border-radius: 9999px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);">
+                                <div id="dashboard-salary-progress" style="width: 0%; height: 100%; border-radius: 9999px; background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); transition: width 0.5s ease;"></div>
                             </div>
                         </div>
 
                         <!-- Right: Expenses Category Breakdown -->
-                        <div class="card">
-                            <h3><i class="fa-solid fa-chart-pie text-primary"></i> Category Spending Distribution</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Real-time
-                                expense distribution by category group</p>
-                            <div id="dashboard-expense-categories"
-                                style="display: flex; flex-direction: column; gap: 10px;">
+                        <div class="clay-card">
+                            <div class="card-title-header-flex">
+                                <div class="card-title-left">
+                                    <div class="icon-badge-3d badge-blue" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-chart-pie"></i>
+                                    </div>
+                                    <h3>Category Spending Distribution</h3>
+                                </div>
+                            </div>
+                            <p class="card-subtitle-desc">Real-time expense distribution by category group</p>
+                            <div id="dashboard-expense-categories" style="display: flex; flex-direction: column; gap: 10px;">
                                 <!-- Dynamically loaded categories progress bars -->
                             </div>
                         </div>
@@ -1315,7 +1366,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="script.js?v=9"></script>
+    <script src="script.js?v=10"></script>
 </body>
 
 </html>
